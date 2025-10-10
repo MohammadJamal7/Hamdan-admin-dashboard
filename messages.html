@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Messages - Send Messages to Students</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .form-control, .form-select {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 10px;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffc107;
+      color: #fff;
+      box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+
+    .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #ffc107, #ff8c00);
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: transform 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
+    }
+
+    /* Chat Interface Styles */
+    .chat-container {
+      height: calc(100vh - 200px);
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .chat-avatar {
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .chat-info h5 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .chat-info small {
+      opacity: 0.8;
+    }
+
+    .chat-info {
+      position: relative;
+      flex: 1;
+    }
+
+    #studentSearchResults {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      margin-top: 5px;
+    }
+
+    .student-search-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.2s;
+    }
+
+    .student-search-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .student-search-item:last-child {
+      border-bottom: none;
+    }
+
+    .student-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 2px;
+    }
+
+    .student-email {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: stretch;
+    }
+
+    .empty-chat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    .empty-chat i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .message-bubble {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      position: relative;
+      word-wrap: break-word;
+      animation: slideIn 0.3s ease-out;
+      margin-bottom: 5px;
+    }
+
+    .message-sent {
+      align-self: flex-end !important;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      border-bottom-right-radius: 4px;
+      margin-left: auto !important;
+      margin-right: 0 !important;
+      max-width: 70% !important;
+      position: relative;
+      border: 3px solid #28a745 !important; /* Debug border */
+    }
+
+    .message-sent::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: -8px;
+      width: 0;
+      height: 0;
+      border: 8px solid transparent;
+      border-left-color: #667eea;
+      border-bottom: none;
+    }
+
+    .message-received {
+      align-self: flex-start !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: white !important;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom-left-radius: 4px;
+      margin-right: auto !important;
+      margin-left: 0 !important;
+      max-width: 70% !important;
+      position: relative;
+      border: 3px solid #dc3545 !important; /* Debug border */
+    }
+
+    .message-received::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -8px;
+      width: 0;
+      height: 0;
+      border: 8px solid transparent;
+      border-right-color: rgba(255, 255, 255, 0.1);
+      border-bottom: none;
+    }
+
+    .message-text {
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .message-time {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-top: 4px;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .message-received .message-time {
+      text-align: left;
+    }
+
+    .input-area {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      position: sticky;
+      bottom: 0;
+      z-index: 1000;
+    }
+
+    .message-input {
+      flex: 1;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.4;
+      max-height: 120px;
+      min-height: 45px;
+    }
+
+    .message-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .message-input:focus {
+      border-color: #ffc107;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .send-button {
+      width: 45px;
+      height: 45px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffc107, #ff8c00);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+
+    .send-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+
+    .send-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+      .chat-container {
+        height: calc(100vh - 140px);
+        border-radius: 0;
+        margin: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 80px;
+        z-index: 999;
+      }
+      
+      .container {
+        padding: 0;
+        margin: 0;
+      }
+
+      .input-area {
+        position: fixed;
+        bottom: 80px;
+        left: 0;
+        right: 0;
+        padding: 15px;
+        border-radius: 0;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+      }
+      
+      .message-input {
+        font-size: 16px;
+        border-radius: 20px;
+        padding: 12px 16px;
+      }
+      
+      .send-button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+      }
+
+      .messages-area {
+        padding: 15px;
+        padding-bottom: 100px;
+      }
+    }
+
+    .btn-outline-light:hover {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    .message-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+
+    .message-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .priority-badge {
+      font-size: 0.8rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+    }
+
+    .priority-low { background: #28a745; }
+    .priority-normal { background: #17a2b8; }
+    .priority-high { background: #ffc107; color: #000; }
+    .priority-urgent { background: #dc3545; }
+
+     .type-badge {
+       font-size: 0.8rem;
+       padding: 4px 8px;
+       border-radius: 20px;
+       background: #6c757d;
+     }
+
+     .btn-outline-danger {
+       border-color: #dc3545;
+       color: #dc3545;
+       transition: all 0.3s;
+     }
+
+     .btn-outline-danger:hover {
+       background-color: #dc3545;
+       border-color: #dc3545;
+       color: white;
+       transform: scale(1.05);
+     }
+
+    .student-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .student-card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #ffc107;
+    }
+
+    .student-card.selected {
+      background: rgba(255, 193, 7, 0.2);
+      border-color: #ffc107;
+    }
+
+    .max-height-300 {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .search-results {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .selected-students {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+    }
+
+    .search-input {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .search-input:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffc107;
+      color: #fff;
+      box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .search-status {
+      font-size: 0.8rem;
+      color: #17a2b8;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Back Button -->
+  <div class="container mt-3">
+    <a href="index.html" class="btn btn-outline-light" style="border-radius: 30px; font-weight: 600;">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <!-- Chat Interface -->
+  <div class="container mt-4 mb-5 pb-5">
+    <div class="chat-container">
+      <!-- Chat Header with Student Selector -->
+      <div class="chat-header">
+        <div class="chat-avatar">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="chat-info">
+          <div class="d-flex align-items-center gap-2">
+            <div class="position-relative" style="width: 250px;">
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="studentSearch" 
+                placeholder="Search students by name or email..."
+                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding-right: 40px;"
+                autocomplete="off"
+              >
+              <button class="btn btn-sm btn-outline-light position-absolute" style="right: 5px; top: 50%; transform: translateY(-50%); padding: 2px 6px;" onclick="clearStudentSearch()" title="Clear search">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="loadAllStudents()" title="Refresh students">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+          <small id="selectedStudentInfo" style="opacity: 0.8;"></small>
+          
+          <!-- Search Results Dropdown -->
+          <div id="studentSearchResults" class="position-absolute bg-white text-dark rounded shadow-lg" style="top: 100%; left: 0; right: 0; z-index: 1000; max-height: 200px; overflow-y: auto; display: none;">
+            <!-- Search results will appear here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Area -->
+      <div class="messages-area" id="messagesArea">
+        <div class="empty-chat" id="emptyChat">
+          <i class="fas fa-comments"></i>
+          <h5>Select a student to start messaging</h5>
+          <p>Choose a student from the dropdown above to view your conversation</p>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <textarea 
+          class="message-input" 
+          id="messageInput" 
+          placeholder="اكتب رسالتك هنا..."
+          rows="1"
+        ></textarea>
+        <button class="send-button" id="sendButton" onclick="sendMessage()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="text-center">
+      <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status"></div>
+      <p class="mt-3 fw-bold fs-5 text-secondary">Processing...</p>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+   const API_BASE = 'https://api.hamdan.help/api';
+    //const API_BASE = 'http://localhost:3000/api';
+    const token = localStorage.getItem('token');
+    let students = [];
+    let selectedStudents = [];
+
+    // Check authentication
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+    
+    // Debug info
+    console.log('Token:', token ? 'Present' : 'Missing');
+    console.log('API_BASE:', API_BASE);
+
+    // Load messages on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load students first
+      loadAllStudents();
+      
+      // Add search functionality
+      const studentSearch = document.getElementById('studentSearch');
+      if (studentSearch) {
+        studentSearch.addEventListener('input', searchStudents);
+        studentSearch.addEventListener('focus', function() {
+          if (this.value.length >= 2) {
+            searchStudents();
+          }
+        });
+      }
+
+      // Add message input functionality
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      
+      if (messageInput) {
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+          
+          // Enable/disable send button
+          if (sendButton) {
+            sendButton.disabled = !this.value.trim() || !selectedStudent;
+          }
+        });
+        
+        // Send on Enter
+        messageInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (this.value.trim() && selectedStudent) {
+              sendMessage();
+            }
+          }
+        });
+      }
+      
+      // Check for pre-selected student from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentId = urlParams.get('studentId');
+      const studentName = urlParams.get('studentName');
+      const studentEmail = urlParams.get('studentEmail');
+      
+      console.log('URL parameters received:', { studentId, studentName, studentEmail });
+      console.log('Current URL:', window.location.href);
+      
+      if (studentId && studentName) {
+        console.log('Pre-selecting student:', { studentId, studentName, studentEmail });
+        // Pre-select the student with a small delay to ensure DOM is ready
+        setTimeout(() => {
+          preSelectStudent(studentId, studentName, studentEmail);
+        }, 100);
+      } else {
+        console.log('No student parameters found in URL');
+      }
+    });
+
+    // Search students function
+    async function searchStudents() {
+      const searchTerm = document.getElementById('studentSearch').value.trim();
+      
+      if (!searchTerm) {
+        hideSearchStatus();
+        return; // Don't show error, just return silently
+      }
+
+      try {
+        showSearchStatus();
+        const response = await fetch(`${API_BASE}/students?adminsOnly=false&search=${encodeURIComponent(searchTerm)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          students = data.data;
+          displaySearchResults(students);
+        } else {
+          console.error('Error searching students:', data.message);
+          // Don't show toast for auto-search, just log error
+        }
+      } catch (error) {
+        console.error('Error searching students:', error);
+        // Don't show toast for auto-search, just log error
+      } finally {
+        hideSearchStatus();
+      }
+    }
+
+    // Show search status
+    function showSearchStatus() {
+      document.getElementById('searchStatus').style.display = 'block';
+    }
+
+    // Hide search status
+    function hideSearchStatus() {
+      document.getElementById('searchStatus').style.display = 'none';
+    }
+
+    // Pre-select student from URL parameters
+    function preSelectStudent(studentId, studentName, studentEmail) {
+      console.log('preSelectStudent called with:', { studentId, studentName, studentEmail });
+      
+      // Add student to selectedStudents array
+      if (!selectedStudents.includes(studentId)) {
+        selectedStudents.push(studentId);
+        console.log('Added student to selectedStudents:', selectedStudents);
+      }
+      
+      // Create a mock student object for display
+      const mockStudent = {
+        id: studentId,
+        name: studentName,
+        email: studentEmail
+      };
+      
+      // Add to students array if not already there
+      if (!students.find(s => s.id === studentId)) {
+        students.push(mockStudent);
+        console.log('Added student to students array:', students);
+      }
+      
+      // Update the display
+      updateSelectedStudentsDisplay();
+      console.log('Updated selected students display');
+      
+      // Select the student to trigger conversation loading
+      selectStudent(mockStudent);
+      console.log('Selected student for conversation:', mockStudent);
+      
+      // Show success message
+      showToast(`Student ${studentName} pre-selected for messaging`, 'success');
+      
+      // Clear URL parameters to avoid re-selection on refresh
+      const url = new URL(window.location);
+      url.searchParams.delete('studentId');
+      url.searchParams.delete('studentName');
+      url.searchParams.delete('studentEmail');
+      window.history.replaceState({}, '', url);
+      console.log('Cleared URL parameters');
+    }
+
+    // Load all students function
+    async function loadAllStudents() {
+      try {
+        console.log('Loading students...', `${API_BASE}/students?adminsOnly=false`);
+        showLoading(true);
+        
+        const response = await fetch(`${API_BASE}/students?adminsOnly=false`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Students data:', data);
+        
+        if (data.success) {
+          students = data.data;
+          console.log('Loaded students:', students.length);
+          showToast(`Loaded ${students.length} students`, 'info');
+        } else {
+          showToast('Error loading students', 'danger');
+        }
+      } catch (error) {
+        console.error('Error loading students:', error);
+        showToast('Error loading students', 'danger');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Search students function
+    function searchStudents() {
+      const searchTerm = document.getElementById('studentSearch').value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('studentSearchResults');
+      
+      if (searchTerm.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+      
+      const filteredStudents = students.filter(student => 
+        student.name.toLowerCase().includes(searchTerm) || 
+        student.email.toLowerCase().includes(searchTerm)
+      );
+      
+      displayStudentSearchResults(filteredStudents);
+    }
+
+    // Display student search results
+    function displayStudentSearchResults(searchResults) {
+      const resultsDiv = document.getElementById('studentSearchResults');
+      
+      if (searchResults.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="student-search-item text-center text-muted">
+            <i class="bi bi-search"></i>
+            <p class="mb-0">No students found</p>
+          </div>
+        `;
+        resultsDiv.style.display = 'block';
+        return;
+      }
+      
+      resultsDiv.innerHTML = '';
+      searchResults.forEach(student => {
+        const studentItem = document.createElement('div');
+        studentItem.className = 'student-search-item';
+        studentItem.onclick = () => selectStudent(student);
+        studentItem.innerHTML = `
+          <div class="student-name">${student.name}</div>
+          <div class="student-email">${student.email}</div>
+        `;
+        resultsDiv.appendChild(studentItem);
+      });
+      
+      resultsDiv.style.display = 'block';
+    }
+
+    // Select student function
+    function selectStudent(student) {
+      selectedStudent = student;
+      
+      const studentSearch = document.getElementById('studentSearch');
+      const selectedStudentInfo = document.getElementById('selectedStudentInfo');
+      const searchResults = document.getElementById('studentSearchResults');
+      
+      if (studentSearch) studentSearch.value = student.name;
+      if (selectedStudentInfo) selectedStudentInfo.textContent = `Chatting with ${student.name} (${student.email})`;
+      if (searchResults) searchResults.style.display = 'none';
+      
+      // Load conversation with this student
+      loadConversationWithStudent(student.id);
+    }
+
+    // Clear student search
+    function clearStudentSearch() {
+      const studentSearch = document.getElementById('studentSearch');
+      const searchResults = document.getElementById('studentSearchResults');
+      const selectedStudentInfo = document.getElementById('selectedStudentInfo');
+      
+      if (studentSearch) studentSearch.value = '';
+      if (searchResults) searchResults.style.display = 'none';
+      if (selectedStudentInfo) selectedStudentInfo.textContent = '';
+      
+      selectedStudent = null;
+      
+      // Clear messages area
+      const messagesArea = document.getElementById('messagesArea');
+      const emptyChat = document.getElementById('emptyChat');
+      
+      if (messagesArea && emptyChat) {
+        messagesArea.innerHTML = '';
+        messagesArea.appendChild(emptyChat);
+        emptyChat.style.display = 'flex';
+      }
+    }
+
+    // Load conversation with specific student
+    async function loadConversationWithStudent(studentId) {
+      try {
+        const response = await fetch(`${API_BASE}/messages/admin/conversation/${studentId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          displayMessages(data.data.messages);
+        } else {
+          showToast('Error loading conversation', 'danger');
+        }
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+        showToast('Error loading conversation', 'danger');
+      }
+    }
+
+    // Display messages in chat format
+    function displayMessages(messages) {
+      const messagesArea = document.getElementById('messagesArea');
+      const emptyChat = document.getElementById('emptyChat');
+      
+      // Check if elements exist
+      if (!messagesArea) {
+        console.error('messagesArea element not found');
+        return;
+      }
+      
+      if (!emptyChat) {
+        console.error('emptyChat element not found');
+        return;
+      }
+      
+      if (messages.length === 0) {
+        emptyChat.style.display = 'flex';
+        return;
+      }
+      
+      emptyChat.style.display = 'none';
+      messagesArea.innerHTML = '';
+      
+      // Messages are already sorted by creation time (oldest first) from the backend
+      messages.forEach(message => {
+        const messageBubble = document.createElement('div');
+        messageBubble.className = 'message-bubble';
+        
+        console.log('Message:', message.content, 'isFromAdmin:', message.isFromAdmin, 'Sender:', message.sender?.name, 'isAdmin:', message.sender?.isAdmin);
+        
+        // Use the isFromAdmin flag from the backend
+        if (message.isFromAdmin) {
+          messageBubble.classList.add('message-sent');
+          console.log('Added message-sent class');
+        } else {
+          messageBubble.classList.add('message-received');
+          console.log('Added message-received class');
+        }
+        
+        // Format time in Arabic
+        const timeString = formatArabicTime(new Date(message.createdAt));
+        
+        messageBubble.innerHTML = `
+          <p class="message-text">${message.content}</p>
+          <div class="message-time">${timeString}</div>
+        `;
+        
+        console.log('Final message bubble classes:', messageBubble.className);
+        messagesArea.appendChild(messageBubble);
+      });
+      
+      // Scroll to bottom
+      scrollToBottom();
+    }
+
+    // Format time in Arabic
+    function formatArabicTime(date) {
+      const now = new Date();
+      const diff = now - date;
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (seconds < 60) {
+        return `${seconds} ثانية`;
+      } else if (minutes < 60) {
+        return `${minutes} دقيقة`;
+      } else if (hours < 24) {
+        return `${hours} ساعة`;
+      } else if (days < 7) {
+        return `${days} يوم`;
+      } else {
+        return date.toLocaleDateString('ar-SA', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+      const messagesArea = document.getElementById('messagesArea');
+      if (messagesArea) {
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+      }
+    }
+
+    // Send message function
+    async function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      const content = messageInput.value.trim();
+      
+      if (!content || !selectedStudent) {
+        return;
+      }
+      
+      // Disable input and button
+      messageInput.disabled = true;
+      sendButton.disabled = true;
+      
+      // Add message optimistically
+      const tempId = `temp_${Date.now()}`;
+      addMessageToChat(content, 'sent', tempId);
+      
+      // Clear input
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      
+      try {
+        const response = await fetch(`${API_BASE}/messages/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            recipientId: selectedStudent.id,
+            content: content
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('Message sent successfully:', data);
+          showToast('تم إرسال الرسالة بنجاح', 'success');
+          // Reload the conversation to show the real message
+          if (selectedStudent) {
+            loadConversationWithStudent(selectedStudent.id);
+          }
+        } else {
+          console.log('Message send failed:', data);
+          // Remove the optimistic message on error
+          removeMessageFromChat(tempId);
+          showToast(data.message || 'خطأ في إرسال الرسالة', 'danger');
+        }
+      } catch (error) {
+        // Remove the optimistic message on error
+        removeMessageFromChat(tempId);
+        console.error('Error sending message:', error);
+        showToast('خطأ في إرسال الرسالة', 'danger');
+      } finally {
+        // Re-enable input and button
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        messageInput.focus();
+      }
+    }
+
+    // Add message to chat
+    function addMessageToChat(content, type, messageId = null) {
+      const messagesArea = document.getElementById('messagesArea');
+      const emptyChat = document.getElementById('emptyChat');
+      
+      console.log('Adding message to chat:', { content, type, messageId });
+      
+      // Hide empty state if it exists
+      if (emptyChat) {
+        emptyChat.style.display = 'none';
+      }
+      
+      const messageBubble = document.createElement('div');
+      messageBubble.className = `message-bubble message-${type}`;
+      messageBubble.setAttribute('data-message-id', messageId || `temp_${Date.now()}`);
+      
+      const now = new Date();
+      const timeString = formatArabicTime(now);
+      
+      messageBubble.innerHTML = `
+        <p class="message-text">${content}</p>
+        <div class="message-time">${timeString}</div>
+      `;
+      
+      console.log('Optimistic message bubble classes:', messageBubble.className);
+      
+      if (messagesArea) {
+        messagesArea.appendChild(messageBubble);
+        console.log('Message added to DOM, scrolling to bottom');
+        scrollToBottom();
+      } else {
+        console.error('messagesArea not found');
+      }
+    }
+
+    // Remove message from chat (for error handling)
+    function removeMessageFromChat(messageId) {
+      const messagesArea = document.getElementById('messagesArea');
+      const messageElement = messagesArea?.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.remove();
+      }
+    }
+
+    // Display search results
+    function displaySearchResults(searchResults) {
+      const studentList = document.getElementById('studentList');
+      studentList.innerHTML = '';
+
+      if (searchResults.length === 0) {
+        studentList.innerHTML = `
+          <div class="text-center text-muted py-3">
+            <i class="bi bi-search"></i>
+            <p>No students found matching your search</p>
+          </div>
+        `;
+        return;
+      }
+
+      searchResults.forEach(student => {
+        const studentCard = document.createElement('div');
+        studentCard.className = 'student-card';
+        studentCard.dataset.studentId = student.id;
+        studentCard.innerHTML = `
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <input type="checkbox" class="form-check-input me-3" 
+                     onchange="toggleStudentSelection('${student.id}')">
+              <div>
+                <h6 class="mb-1">${student.name}</h6>
+                <small class="text-muted">${student.email}</small>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="addStudent('${student.id}')">
+              <i class="bi bi-plus"></i> Add
+            </button>
+          </div>
+        `;
+        studentList.appendChild(studentCard);
+      });
+    }
+
+    // Add student to selection
+    function addStudent(studentId) {
+      if (!selectedStudents.includes(studentId)) {
+        selectedStudents.push(studentId);
+        updateSelectedStudentsDisplay();
+        showToast('Student added to selection', 'success');
+      }
+    }
+
+    // Toggle student selection
+    function toggleStudentSelection(studentId) {
+      const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+      const checkbox = studentCard.querySelector('input[type="checkbox"]');
+      
+      if (checkbox.checked) {
+        if (!selectedStudents.includes(studentId)) {
+          selectedStudents.push(studentId);
+        }
+        studentCard.classList.add('selected');
+      } else {
+        selectedStudents = selectedStudents.filter(id => id !== studentId);
+        studentCard.classList.remove('selected');
+      }
+      updateSelectedStudentsDisplay();
+    }
+
+    // Update selected students display
+    function updateSelectedStudentsDisplay() {
+      const selectedStudentInfo = document.getElementById('selectedStudentInfo');
+      
+      if (!selectedStudentInfo) {
+        console.log('selectedStudentInfo element not found');
+        return;
+      }
+      
+      if (selectedStudents.length > 0) {
+        // Get selected student details
+        const selectedStudentDetails = selectedStudents.map(id => {
+          const student = students.find(s => s.id === id);
+          return student ? { id, name: student.name, email: student.email } : null;
+        }).filter(Boolean);
+        
+        // Update selected student info
+        selectedStudentInfo.textContent = `Selected: ${selectedStudents.length} student(s) - ${selectedStudentDetails.map(s => s.name).join(', ')}`;
+        selectedStudentInfo.style.display = 'block';
+        
+        console.log('Updated selected students display:', selectedStudentDetails);
+      } else {
+        selectedStudentInfo.textContent = '';
+        selectedStudentInfo.style.display = 'none';
+        console.log('Cleared selected students display');
+      }
+    }
+
+    // Remove student from selection
+    function removeStudent(studentId) {
+      selectedStudents = selectedStudents.filter(id => id !== studentId);
+      updateSelectedStudentsDisplay();
+      
+      // Uncheck checkbox if visible
+      const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+      if (studentCard) {
+        const checkbox = studentCard.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.checked = false;
+          studentCard.classList.remove('selected');
+        }
+      }
+    }
+
+    // Clear selection
+    function clearSelection() {
+      selectedStudents = [];
+      updateSelectedStudentsDisplay();
+      
+      // Uncheck all checkboxes
+      document.querySelectorAll('#studentList .student-card').forEach(card => {
+        card.classList.remove('selected');
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.checked = false;
+        }
+      });
+      
+      showToast('Selection cleared', 'info');
+    }
+
+    // Load sent messages
+    async function loadMessages() {
+      try {
+        const response = await fetch(`${API_BASE}/messages/admin`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          displayMessages(data.data.messages);
+        } else {
+          showToast('Error loading messages', 'danger');
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        showToast('Error loading messages', 'danger');
+      }
+    }
+
+
+
+     // Load received messages from students
+     async function loadReceivedMessages() {
+       try {
+         const response = await fetch(`${API_BASE}/messages/admin/received`, {
+           headers: { 'Authorization': `Bearer ${token}` }
+         });
+         const data = await response.json();
+         
+         if (data.success) {
+           displayReceivedMessages(data.data.messages);
+         } else {
+           showToast('Error loading received messages', 'danger');
+         }
+       } catch (error) {
+         console.error('Error loading received messages:', error);
+         showToast('Error loading received messages', 'danger');
+       }
+     }
+
+     // Display received messages
+     function displayReceivedMessages(messages) {
+       const receivedMessagesList = document.getElementById('receivedMessagesList');
+       
+       if (messages.length === 0) {
+         receivedMessagesList.innerHTML = `
+           <div class="text-center py-4">
+             <i class="bi bi-inbox fs-1 text-muted"></i>
+             <p class="text-muted mt-2">No messages from students yet</p>
+           </div>
+         `;
+         return;
+       }
+
+       receivedMessagesList.innerHTML = '';
+       messages.forEach(message => {
+         const messageItem = document.createElement('div');
+         messageItem.className = 'message-item';
+         messageItem.innerHTML = `
+           <div class="d-flex justify-content-between align-items-start mb-2">
+             <h6 class="mb-1">${message.subject}</h6>
+             <div class="d-flex align-items-center gap-2">
+               <span class="priority-badge priority-${message.priority}">${message.priority}</span>
+               <span class="type-badge">${message.type}</span>
+               <button class="btn btn-sm btn-outline-danger" onclick="deleteMessage('${message.id}')" title="Delete message">
+                 <i class="bi bi-trash"></i>
+               </button>
+             </div>
+           </div>
+           <p class="text-muted small mb-2">${message.content.substring(0, 100)}${message.content.length > 100 ? '...' : ''}</p>
+           <div class="d-flex justify-content-between align-items-center">
+             <small class="text-muted">
+               From: ${message.sender.name} (${message.sender.email})
+             </small>
+             <small class="text-muted">${message.createdAgo}</small>
+           </div>
+         `;
+         receivedMessagesList.appendChild(messageItem);
+       });
+     }
+
+     // Delete message function
+     async function deleteMessage(messageId) {
+       if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+         return;
+       }
+
+       try {
+         showLoading(true);
+         const response = await fetch(`${API_BASE}/messages/${messageId}`, {
+           method: 'DELETE',
+           headers: { 'Authorization': `Bearer ${token}` }
+         });
+         
+         const data = await response.json();
+         
+         if (data.success) {
+           showToast('Message deleted successfully', 'success');
+           loadMessages(); // Reload messages to update the list
+           loadReceivedMessages(); // Reload received messages too
+         } else {
+           showToast(data.message || 'Error deleting message', 'danger');
+         }
+       } catch (error) {
+         console.error('Error deleting message:', error);
+         showToast('Error deleting message', 'danger');
+       } finally {
+         showLoading(false);
+       }
+     }
+
+     // Utility functions
+    function showLoading(show) {
+      document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toastId = `toast-${Date.now()}`;
+      const toastEl = document.createElement('div');
+
+      toastEl.className = `toast align-items-center text-white bg-${type} border-0 show`;
+      toastEl.id = toastId;
+      toastEl.setAttribute('role', 'alert');
+      toastEl.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+
+      toastContainer.appendChild(toastEl);
+      setTimeout(() => {
+        toastEl.remove();
+      }, 4000);
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+
+</body>
+</html>

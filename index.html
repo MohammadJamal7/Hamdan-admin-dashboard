@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.85);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .navbar-brand {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .navbar-nav .nav-link {
+      color: #fff !important;
+      font-weight: 500;
+      margin-left: 10px;
+      transition: color 0.3s;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ffc107 !important;
+    }
+
+    .btn-outline-light:hover {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    h3 {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 2rem;
+    }
+
+    .card-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 20px;
+      width: 250px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    .card-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .card .btn {
+      background-color: #343a40;
+      border: none;
+      font-weight: 600;
+      padding: 10px 20px;
+      margin-top: 10px;
+      border-radius: 12px;
+      transition: 0.3s;
+    }
+
+    .card .btn:hover {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      h3 {
+        font-size: 1.5rem;
+      }
+
+      .card-wrapper {
+        padding: 20px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+ <!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Admin Dashboard</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0" id="adminNav">
+        <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
+        <li class="nav-item mt-2 mt-lg-0 ms-lg-3">
+          <button class="btn btn-outline-light w-100" onclick="logout()">Logout</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  <!-- Main Content -->
+  <h3>Welcome, <span id="adminName">Admin</span> 👋</h3>
+
+  <!-- Cards Section -->
+  <div class="card-wrapper" id="dashboardCards"></div>
+  <!-- JS -->
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
+
+    async function fetchLatestUser() {
+    if (!token) {
+      window.location.href = 'login.html';
+        return;
+      }
+      try {
+        const res = await fetch('https://api.hamdan.help/api/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.data) {
+          localStorage.setItem('user', JSON.stringify(data.data));
+          return data.data;
+        } else {
+          throw new Error('Failed to fetch user profile');
+        }
+      } catch (err) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    }
+
+    (async function() {
+      const latestUser = await fetchLatestUser();
+      if (!latestUser) return;
+      console.log('Raw user object from localStorage:', latestUser);
+      document.getElementById('adminName').textContent = latestUser?.name || latestUser?.username || "Admin";
+
+      // Permission helper
+      function hasPermission(perm) {
+        return latestUser?.isSuperAdmin || (latestUser?.permissions && latestUser.permissions.includes(perm));
+      }
+
+      // Dashboard cards config
+      const cards = [
+        { perm: 'manage_courses', icon: '🎥', title: 'Manage Videos', link: 'videos.html' },
+        { perm: 'manage_playlists', icon: '📂', title: 'Playlists', link: 'playlists.html' },
+        { perm: 'manage_students', icon: '👨‍🎓', title: 'Students', link: 'students.html' },
+        { perm: 'send_notifications', icon: '🔔', title: 'Send Notifications', link: 'notifications.html' },
+        { perm: 'manage_privacy_policy', icon: '🔒', title: 'Privacy Policy', link: 'privacy-policy.html' },
+        { perm: 'manage_support_links', icon: '🔗', title: 'Support Links', link: 'support-links.html' },
+        { perm: 'manage_questions', icon: '❓', title: 'Interactive Questions', link: 'question-management.html' },
+        { perm: 'send_messages', icon: '💬', title: 'Send Messages', link: 'messages.html' },
+        { perm: 'manage_universities', icon: '🏛️', title: 'University Management', link: 'university-management.html' },
+        { perm: 'manage_admins', icon: '🛡️', title: 'Admin Management', link: 'admin-management.html', superAdmin: true }
+      ];
+      // Render cards
+      const cardWrapper = document.getElementById('dashboardCards');
+      cardWrapper.innerHTML = '';
+      const visibleCards = [];
+      cards.forEach(card => {
+        if (
+          card.perm === null ||
+          hasPermission(card.perm) ||
+          (card.superAdmin && latestUser?.isSuperAdmin)
+        ) {
+          visibleCards.push(card.title);
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `<div class="card-body">
+            <div class="card-icon">${card.icon}</div>
+            <h5 class="card-title">${card.title}</h5>
+            <a href="${card.link}" class="btn text-white">Go</a>
+          </div>`;
+          cardWrapper.appendChild(div);
+        }
+      });
+      console.log('Cards visible to this user:', visibleCards);
+
+      // Navbar is kept simple with only Dashboard and Logout
+      // All navigation is handled through the dashboard cards
+    })();
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+  <!-- Bootstrap JS with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

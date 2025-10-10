@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: linear-gradient(to right, #1f1c2c, #928dab);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-box {
+      backdrop-filter: blur(20px);
+      background-color: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 40px 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+      color: #fff;
+    }
+
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-weight: bold;
+      font-size: 28px;
+    }
+
+    .form-label {
+      color: #f1f1f1;
+      font-weight: 500;
+    }
+
+    .form-control {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      transition: 0.3s;
+    }
+
+    .form-control:focus {
+      background-color: rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+      outline: none;
+    }
+
+    .btn-dark {
+      background: linear-gradient(to right, #434343, #000000);
+      border: none;
+      padding: 12px;
+      font-weight: 500;
+      transition: 0.3s;
+      border-radius: 12px;
+    }
+
+    .btn-dark:hover {
+      background: linear-gradient(to right, #000000, #434343);
+    }
+
+    #errorMsg {
+      font-size: 14px;
+    }
+
+    ::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <form id="loginForm">
+      <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" placeholder="Enter your email" required/>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" placeholder="••••••••" required/>
+      </div>
+      <div class="d-grid">
+        <button type="submit" class="btn btn-dark">Login</button>
+      </div>
+      <div id="errorMsg" class="text-danger mt-3 d-none text-center"></div>
+    </form>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const errorMsg = document.getElementById('errorMsg');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      try { 
+        localStorage.clear(); // Always clear before setting new user/token
+        const res = await fetch('https://api.hamdan.help/api/admin/login', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ 
+              email, 
+              password 
+              // No need to send deviceId for admin login
+          }) 
+      }); 
+
+      const data = await res.json();
+
+      if (res.ok && data.success) { 
+          // Store the full admin user object (with permissions and isSuperAdmin)
+          localStorage.setItem('token', data.data.token); 
+          localStorage.setItem('user', JSON.stringify(data.data.admin || data.data.student || {}));
+          window.location.href = 'index.html'; 
+      } else { 
+          throw new Error(data.message || 'Login failed'); 
+      } 
+  } catch (err) { 
+      errorMsg.textContent = err.message; 
+      errorMsg.classList.remove('d-none'); 
+  } 
+      });
+    </script>
+
+</body>
+</html>

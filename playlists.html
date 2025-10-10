@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Playlists</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://unpkg.com/@mux/mux-player"></script>
+  <script>
+    // Suppress MUX player debug messages globally
+    if (window.console) {
+      const originalWarn = console.warn;
+      const originalError = console.error;
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        if (message.includes('[mux-player') || message.includes('Missing expected thumbnail token')) {
+          return; // Suppress MUX player warnings
+        }
+        originalWarn.apply(console, args);
+      };
+      console.error = function(...args) {
+        const message = args.join(' ');
+        if (message.includes('[mux-player')) {
+          return; // Suppress MUX player errors
+        }
+        originalError.apply(console, args);
+      };
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.7) !important;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .navbar-nav .nav-link {
+      color: #fff !important;
+      transition: color 0.3s ease;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ffc107 !important;
+    }
+
+    .container {
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      color: #fff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-content {
+      background-color: #2b2e4a;
+      color: #fff;
+      border-radius: 1rem;
+    }
+
+    .form-control,
+    .form-select {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .form-control::placeholder {
+      color: #ccc;
+    }
+
+    /* Enhanced Sortable styles */
+    .sortable-ghost {
+      opacity: 0.3;
+      background: rgba(255, 193, 7, 0.2);
+      border: 2px dashed #ffc107;
+      transform: scale(0.95);
+    }
+
+    .sortable-chosen {
+      transform: scale(1.05) rotate(2deg);
+      box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
+      z-index: 1000;
+    }
+
+    .sortable-drag {
+      opacity: 0.8;
+      transform: rotate(5deg);
+    }
+
+    .drag-handle {
+      color: #ffc107;
+      font-size: 1.5rem;
+      transition: all 0.3s ease;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .drag-handle:hover {
+      color: #fff;
+      background: rgba(255, 193, 7, 0.2);
+      cursor: grab;
+      transform: scale(1.2);
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+
+    .sortable-item {
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .sortable-item:hover {
+      transform: translateY(-3px);
+    }
+
+    .order-badge {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      background: linear-gradient(45deg, #ffc107, #ff8c00);
+      color: #000;
+      font-weight: bold;
+      font-size: 0.9rem;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+      border: 3px solid #fff;
+    }
+
+    .reorder-mode {
+      background: rgba(255, 193, 7, 0.1);
+      border: 2px solid rgba(255, 193, 7, 0.3);
+      border-radius: 12px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+
+    .reorder-instructions {
+      background: rgba(255, 193, 7, 0.15);
+      border-left: 4px solid #ffc107;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+
+    .reorder-toggle-btn {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+      color: white;
+    }
+
+    .reorder-toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    }
+
+    .reorder-toggle-btn.active {
+       background: linear-gradient(45deg, #dc3545, #c82333);
+       box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+     }
+
+     .reorder-mode .drag-handle {
+       color: #ffc107 !important;
+       background: rgba(255, 193, 7, 0.2) !important;
+       animation: pulse 2s infinite;
+     }
+
+     @keyframes pulse {
+       0% { transform: scale(1); }
+       50% { transform: scale(1.1); }
+       100% { transform: scale(1); }
+     }
+
+     .reorder-mode .sortable-item {
+       border: 2px dashed rgba(255, 193, 7, 0.3);
+       border-radius: 8px;
+     }
+
+     .reorder-mode .card-header {
+       background: linear-gradient(45deg, rgba(255, 193, 7, 0.2), rgba(255, 140, 0, 0.2)) !important;
+     }
+
+    .btn-primary,
+    .btn-warning,
+    .btn-danger,
+    .btn-outline-success,
+    .btn-success,
+    .btn-secondary {
+      border-radius: 12px;
+    }
+
+    .btn-primary {
+      background-color: #6a82fb;
+      border-color: #6a82fb;
+    }
+
+    .btn-warning {
+      background-color: #ffb347;
+      border-color: #ffb347;
+      color: #000;
+    }
+
+    .btn-danger {
+      background-color: #ff5e62;
+      border-color: #ff5e62;
+    }
+
+    .btn-outline-success {
+      color: #8fd3f4;
+      border-color: #8fd3f4;
+    }
+
+    .btn-outline-success:hover {
+      background-color: #8fd3f4;
+      color: #000;
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+    }
+
+    video {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      background-color: #000;
+      border-radius: 12px;
+    }
+  </style>
+
+
+</head>
+<body>
+
+  <div class="container mt-3">
+    <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <div class="container mt-4">
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlaylistModal">
+          + New Playlist
+        </button>
+      </div>
+      <div class="col-md-6">
+        <div class="input-group">
+          <input type="text" class="form-control" id="playlistSearchInput" placeholder="Search playlists or courses...">
+          <button class="btn btn-outline-light" type="button" id="playlistSearchBtn">
+            <i class="bi bi-search"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="playlistsContainer"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Add Playlist Modal -->
+  <div class="modal fade" id="addPlaylistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="addPlaylistForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Add New Playlist</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-control" name="title" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" name="description" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Image</label>
+            <input type="file" class="form-control" name="image" accept="image/*"/>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Playlist</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Playlist Modal -->
+  <div class="modal fade" id="editPlaylistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="editPlaylistForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Playlist</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editPlaylistId" name="id" />
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-control" id="editTitle" name="title" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="editDescription" name="description" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Image</label>
+            <input type="file" class="form-control" name="image" accept="image/*"/>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Students Modal -->
+  <div class="modal fade" id="manageStudentsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Manage Students for <span id="playlistTitle"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="currentPlaylistId" />
+
+          <!-- Search and Add Students -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h6 class="card-title">Add Students to Playlist</h6>
+              <div class="input-group mb-3">
+                <input type="text" class="form-control" id="studentSearchInput" placeholder="Search students by name or email...">
+                <button class="btn btn-primary" type="button" id="searchStudentsBtn">Search</button>
+              </div>
+              <div id="searchResults" class="mt-3">
+                <!-- Search results will be displayed here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Current Students in Playlist -->
+          <div class="card">
+            <div class="card-body">
+              <h6 class="card-title">Students in this Playlist</h6>
+              <div class="table-responsive">
+                <table class="table table-dark table-striped">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="playlistStudentsTableBody">
+                    <!-- Students will be listed here -->
+                  </tbody>
+                </table>
+              </div>
+              <div id="noStudentsMessage" class="text-center text-warning d-none">
+                No students enrolled in this playlist yet.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+     const BASE_URL = 'https://api.hamdan.help/api';
+  // const BASE_URL = 'http://localhost:3000/api';
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    function showToast(message, type = 'success') {
+      const toastId = `toast-${Date.now()}`;
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type} border-0 mb-2`;
+      toast.id = toastId;
+      toast.role = "alert";
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      document.getElementById('toastContainer').appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+    }
+
+    async function toggleCourseLock(courseId) {
+      try {
+        const res = await fetch(`${BASE_URL}/courses-toggle-lock/${courseId}`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast(`Video ${result.data.isLocked ? 'locked' : 'unlocked'} successfully!`);
+          
+          // Update the button state dynamically without page refresh
+          const lockButton = document.querySelector(`.toggle-lock-btn[data-id="${courseId}"]`);
+          if (lockButton) {
+            const isLocked = result.data.isLocked;
+            
+            // Update button text
+            lockButton.textContent = isLocked ? 'Unlock Video' : 'Lock Video';
+            
+            // Update button styling
+            if (isLocked) {
+              lockButton.classList.remove('btn-outline-success');
+              lockButton.classList.add('btn-success');
+            } else {
+              lockButton.classList.remove('btn-success');
+              lockButton.classList.add('btn-outline-success');
+            }
+          }
+        } else {
+          showToast(result.message || 'Error toggling lock.', 'danger');
+        }
+      } catch (error) {
+        showToast('Error toggling lock status.', 'danger');
+      }
+    }
+
+    async function loadPlaylists() {
+      console.log('🔄 loadPlaylists() called - fetching playlists from server...');
+      
+      const res = await fetch(`${BASE_URL}/playlists`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+
+      const result = await res.json();
+      console.log('📥 loadPlaylists() - received data from server:', result);
+      
+      const container = document.getElementById('playlistsContainer');
+      container.innerHTML = '';
+
+      if (result.success) {
+        if (result.data.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-5">
+              <div class="mb-4">
+                <i class="bi bi-collection-play" style="font-size: 4rem; color: #6a82fb;"></i>
+              </div>
+              <h3 class="text-light mb-3">No Playlists Yet</h3>
+              <p class="text-muted mb-4">Start creating your first playlist to organize your content!</p>
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlaylistModal">
+                <i class="bi bi-plus-circle me-2"></i>Create Your First Playlist
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        result.data.forEach((playlist, index) => {
+          console.log(`📊 Processing playlist ${playlist.id}: studentCount = ${playlist.studentCount || 0}`);
+          
+          const courseListId = `courseList-${playlist.id}`;
+          const toggleBtnId = `toggleBtn-${playlist.id}`;
+
+          const card = document.createElement('div');
+          card.className = 'card mb-4 shadow';
+          card.innerHTML = `
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between">
+                <div class="d-flex align-items-start">
+                  <img src="${playlist.image}" class="rounded me-3" alt="Playlist Image" width="100" height="100" style="object-fit: cover;"
+                  onerror="this.onerror=null; this.src='/Images/static_image.png';"/>
+                  <div>
+                    <h5 class="mb-1">${playlist.title}</h5>
+                    <p class="text-warning mb-1" style="max-width: 70%;">${playlist.description}</p>
+                    <div class="d-flex align-items-center mb-1">
+                      <small class="text-info me-3">
+                        <i class="bi bi-people me-1"></i>
+                        Student Count: 
+                        <span class="student-count-display" data-playlist-id="${playlist.id}">${playlist.studentCount || 0}</span>
+                        <button class="btn btn-sm btn-link p-0 ms-1 edit-student-count-btn" data-playlist-id="${playlist.id}" title="Edit Student Count">
+                          <i class="bi bi-pencil-square text-warning"></i>
+                        </button>
+                      </small>
+                    </div>
+                    <small class="text-success">${playlist.createdAgo}</small>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-6 mb-2">
+                    <button class="btn btn-sm btn-secondary w-100" id="${toggleBtnId}">Show Videos</button>
+                  </div>
+                  <div class="col-6 mb-2">
+                    <button class="btn btn-sm btn-info w-100 manage-students-btn" data-id="${playlist.id}" data-title="${playlist.title}">
+                      <i class="bi bi-people me-1"></i>Manage Students
+                    </button>
+                  </div>
+                  <div class="col-6 mb-2">
+                    <button class="btn btn-sm btn-warning w-100 edit-btn" data-id="${playlist.id}">
+                      <i class="bi bi-pencil-square me-1"></i>Edit
+                    </button>
+                  </div>
+                  <div class="col-6 mb-2">
+                    <button class="btn btn-sm btn-danger w-100 delete-btn" data-id="${playlist.id}">
+                      <i class="bi bi-trash me-1"></i>Delete
+                    </button>
+                  </div>
+                
+                </div>
+              </div>
+              <hr />
+              <div class="reorder-instructions d-none" id="instructions-${playlist.id}">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Reorder Mode Active:</strong> Drag videos by the grip handle to reorder them. Changes are saved automatically!
+              </div>
+              <div class="row d-none sortable-video-list" id="${courseListId}" data-playlist-id="${playlist.id}"></div>
+            </div>
+          `;
+          container.appendChild(card);
+
+          const courseList = document.getElementById(courseListId);
+          if (playlist.courses?.length) {
+            playlist.courses.forEach((course, i) => {
+              const videoId = `video-${playlist.id}-${i}`;
+              const col = document.createElement('div');
+              col.className = 'col-md-4 mb-3 sortable-item';
+              col.setAttribute('data-course-id', course.id);
+              col.setAttribute('data-order', course.order || '');
+              col.innerHTML = `
+                <div class="card h-100">
+                  <div class="order-badge">${i + 1}</div>
+                  <div class="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-grip-vertical me-2 drag-handle" title="Drag to reorder"></i>
+                      <span class="badge bg-info">Video ${i + 1}</span>
+                    </div>
+                    <small class="text-muted">Drag to reorder</small>
+                  </div>
+                  <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="video-title fw-bold" id="title-text-${course.id}">${course.title}</span>
+                      <input type="text" class="form-control d-none ms-2" id="title-input-${course.id}" value="${course.title || ''}" style="max-width: 180px;" />
+                      <button class="btn btn-sm btn-info ms-2 edit-title-btn" data-course-id="${course.id}"><i class="bi bi-pencil"></i> Edit Title</button>
+                      <button class="btn btn-sm btn-success d-none ms-2 save-title-btn" data-course-id="${course.id}"><i class="bi bi-check"></i> Save</button>
+                      <button class="btn btn-sm btn-secondary d-none ms-2 cancel-title-btn" data-course-id="${course.id}"><i class="bi bi-x"></i> Cancel</button>
+                    </div>
+                    <div class="mt-2">
+                      <span class="video-description" id="desc-text-${course.id}">${course.description || ''}</span>
+                      <input type="text" class="form-control d-none mt-2" id="desc-input-${course.id}" value="${course.description || ''}" />
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-warning edit-desc-btn" data-course-id="${course.id}"><i class="bi bi-pencil"></i> Edit Description</button>
+                        <button class="btn btn-sm btn-success d-none save-desc-btn" data-course-id="${course.id}"><i class="bi bi-check"></i> Save</button>
+                        <button class="btn btn-sm btn-secondary d-none cancel-desc-btn" data-course-id="${course.id}"><i class="bi bi-x"></i> Cancel</button>
+                      </div>
+                    </div>
+                    <div id="mux-player-container-${playlist.id}-${i}"></div>
+                    <button class="btn btn-sm ${course.isLocked ? 'btn-success' : 'btn-outline-success'} mt-2 toggle-lock-btn" data-id="${course.id}">
+                      ${course.isLocked ? 'Unlock' : 'Lock'} Video
+                    </button>
+                    <button class="btn btn-sm btn-danger mt-2 remove-course-btn" data-course-id="${course.id}">
+                      <i class="bi bi-trash"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              `;
+              courseList.appendChild(col);
+
+              // Store course ID for lazy loading
+              const container = document.getElementById(`mux-player-container-${playlist.id}-${i}`);
+              if (container) {
+                container.setAttribute('data-course-id', course.id);
+                container.setAttribute('data-loaded', 'false');
+                container.innerHTML = '<div class="text-center py-3"><i class="bi bi-play-circle" style="font-size: 2rem; color: #6c757d;"></i><br><small class="text-muted">Click "Show Videos" to load player</small></div>';
+              }
+            });
+          } else {
+            courseList.innerHTML = '<p class="text-white">No videos available in this playlist.</p>';
+          }
+
+          document.getElementById(toggleBtnId).addEventListener('click', () => {
+            courseList.classList.toggle('d-none');
+            const isHidden = courseList.classList.contains('d-none');
+            document.getElementById(toggleBtnId).textContent = isHidden ? 'Show Videos' : 'Hide Videos';
+            
+            // Lazy load MUX players when videos are shown
+            if (!isHidden) {
+              loadMuxPlayersForPlaylist(playlist.id);
+            }
+          });
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const playlist = result.data.find(p => p.id === id);
+            if (playlist) {
+              document.getElementById('editPlaylistId').value = playlist.id;
+              document.getElementById('editTitle').value = playlist.title;
+              document.getElementById('editDescription').value = playlist.description;
+              new bootstrap.Modal(document.getElementById('editPlaylistModal')).show();
+            }
+          });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            Swal.fire({
+              title: 'Are you sure?',
+              text: "This will delete the playlist!",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, delete it!'
+            }).then(async (result) => {
+              if (result.isConfirmed) {
+                const res = await fetch(`${BASE_URL}/playlists/${id}`, {
+                  method: 'DELETE',
+                  headers: { Authorization: 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (data.success) {
+                  showToast('Deleted successfully!');
+                  loadPlaylists();
+                } else {
+                  showToast(data.message || 'Error deleting.', 'danger');
+                }
+              }
+            });
+          });
+        });
+
+        document.querySelectorAll('.toggle-lock-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const courseId = btn.getAttribute('data-id');
+            toggleCourseLock(courseId);
+          });
+        });
+
+        // Initialize reorder toggle buttons
+        document.querySelectorAll('.reorder-toggle-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const playlistId = btn.getAttribute('data-playlist-id');
+            const videoList = document.getElementById(`courseList-${playlistId}`);
+            const instructions = document.getElementById(`instructions-${playlistId}`);
+            const isActive = btn.classList.contains('active');
+            
+            if (isActive) {
+              // Disable reorder mode
+              btn.classList.remove('active');
+              btn.innerHTML = '<i class="bi bi-arrow-up-down me-2"></i>Enable Easy Reordering';
+              instructions.classList.add('d-none');
+              videoList.classList.remove('reorder-mode');
+            } else {
+              // Enable reorder mode
+              btn.classList.add('active');
+              btn.innerHTML = '<i class="bi bi-x-circle me-2"></i>Disable Reordering';
+              instructions.classList.remove('d-none');
+              videoList.classList.add('reorder-mode');
+              showToast('Reorder mode enabled! Drag videos to reorder them.', 'info');
+            }
+          });
+        });
+
+        // Initialize sortable for video lists
+        document.querySelectorAll('.sortable-video-list').forEach(videoList => {
+          new Sortable(videoList, {
+            animation: 300,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            disabled: false,
+            onStart: function(evt) {
+              showToast('Dragging video... Drop to reorder!', 'info');
+            },
+            onEnd: async function(evt) {
+              const playlistId = videoList.getAttribute('data-playlist-id');
+              const courseOrders = [];
+              
+              // Get new order from DOM and update visual indicators
+              Array.from(videoList.children).forEach((item, index) => {
+                const courseId = item.getAttribute('data-course-id');
+                if (courseId) {
+                  courseOrders.push({ courseId, order: index + 1 });
+                  // Update the order badge
+                  const orderBadge = item.querySelector('.order-badge');
+                  if (orderBadge) {
+                    orderBadge.textContent = index + 1;
+                  }
+                  // Update the video badge
+                  const videoBadge = item.querySelector('.badge');
+                  if (videoBadge) {
+                    videoBadge.textContent = `Video ${index + 1}`;
+                  }
+                }
+              });
+              
+              // Send reorder request to backend
+              try {
+                console.log('Sending reorder request:', { playlistId, courseOrders });
+                const res = await fetch(`${BASE_URL}/playlist/${playlistId}/reorder`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ courseOrders })
+                });
+                
+                console.log('Response status:', res.status);
+                const result = await res.json();
+                console.log('Response data:', result);
+                
+                if (result.success) {
+                  showToast('✅ Video order updated successfully!', 'success');
+                } else {
+                  console.error('Reorder failed:', result);
+                  showToast(result.message || 'Failed to update video order', 'danger');
+                  // Reload playlists to restore original order
+                  loadPlaylists();
+                }
+              } catch (error) {
+                console.error('Reorder error:', error);
+                showToast('Error updating video order', 'danger');
+                // Reload playlists to restore original order
+                loadPlaylists();
+              }
+            }
+          });
+        });
+      } else {
+        container.innerHTML = '<p class="text-danger">Failed to load playlists.</p>';
+      }
+    }
+
+
+    // Lazy load MUX players for a specific playlist
+    async function loadMuxPlayersForPlaylist(playlistId) {
+      const containers = document.querySelectorAll(`[id^="mux-player-container-${playlistId}-"][data-loaded="false"]`);
+      
+      for (const container of containers) {
+        const courseId = container.getAttribute('data-course-id');
+        if (!courseId) continue;
+        
+        container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"></div><br><small class="text-muted">Loading video...</small></div>';
+        
+        try {
+          // Fetch course details
+          const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          
+          if (!data.success || !data.data) {
+            container.innerHTML = '<div class="text-danger text-center py-2">تعذر جلب بيانات الفيديو</div>';
+            continue;
+          }
+          
+          const courseData = data.data;
+          let playbackId = courseData.muxPlaybackId || (courseData.playback_ids && courseData.playback_ids[0]?.id) || courseData.playback_id;
+          let playbackPolicy = courseData.muxPlaybackPolicy || (courseData.playback_ids && courseData.playback_ids[0]?.policy) || courseData.playback_policy;
+          
+          // Fallback: Try to extract playbackId from video URL if still missing
+          if (!playbackId && courseData.video && courseData.video.includes('stream.mux.com/')) {
+            const match = courseData.video.match(/stream\.mux\.com\/([a-zA-Z0-9]+)\.m3u8/);
+            if (match) playbackId = match[1];
+          }
+          
+          if (!playbackId) {
+            container.innerHTML = '<div class="text-danger text-center py-2">رابط الفيديو غير متوفر</div>';
+            continue;
+          }
+          
+          // Fetch MUX tokens
+          const tokenEndpoints = [
+            { attr: 'playback-token', url: `${BASE_URL}/mux/playback-token?playbackId=${playbackId}` },
+            { attr: 'drm-token', url: `${BASE_URL}/mux/drm-token?playbackId=${playbackId}` },
+            { attr: 'thumbnail-token', url: `${BASE_URL}/mux/thumbnail-token?playbackId=${playbackId}` },
+            { attr: 'storyboard-token', url: `${BASE_URL}/mux/storyboard-token?playbackId=${playbackId}` },
+          ];
+          const headers = { Authorization: `Bearer ${token}` };
+          const tokenFetches = tokenEndpoints.map(e => 
+            fetch(e.url, { headers })
+              .then(r => r.json())
+              .catch(() => ({ success: false, token: null }))
+          );
+          const tokens = await Promise.all(tokenFetches);
+          
+          // Create mux-player
+          const muxPlayer = document.createElement('mux-player');
+          muxPlayer.setAttribute('playback-id', playbackId);
+          muxPlayer.setAttribute('style', 'width: 100%; aspect-ratio: 16/9; background: #000;');
+          muxPlayer.setAttribute('disable-tracking', 'true');
+          muxPlayer.setAttribute('debug', 'false');
+          muxPlayer.setAttribute('disable-cookies', 'true');
+          
+          // Set tokens based on policy
+          if (playbackPolicy === 'drm') {
+            if (tokens[0].success && tokens[0].token) {
+              muxPlayer.setAttribute('playback-token', tokens[0].token);
+            }
+            if (tokens[1].success && tokens[1].token) {
+              muxPlayer.setAttribute('drm-token', tokens[1].token);
+            }
+          } else if (playbackPolicy === 'signed') {
+            if (tokens[0].success && tokens[0].token) {
+              muxPlayer.setAttribute('playback-token', tokens[0].token);
+            }
+          } else if (playbackPolicy === 'public') {
+            // No token needed
+          } else if (Array.isArray(courseData.playback_ids) && courseData.playback_ids[0]?.policy && courseData.playback_ids.length > 1) {
+            if (tokens[0].success && tokens[0].token) {
+              muxPlayer.setAttribute('playback-token', tokens[0].token);
+            }
+            if (tokens[1].success && tokens[1].token) {
+              muxPlayer.setAttribute('drm-token', tokens[1].token);
+            }
+          }
+          
+          // Set thumbnail and storyboard tokens if available
+          if (tokens[2] && tokens[2].success && tokens[2].token) {
+            muxPlayer.setAttribute('thumbnail-token', tokens[2].token);
+          } else {
+            muxPlayer.setAttribute('thumbnail-time', '-1');
+          }
+          if (tokens[3] && tokens[3].success && tokens[3].token) {
+            muxPlayer.setAttribute('storyboard-token', tokens[3].token);
+          }
+          
+          muxPlayer.setAttribute('metadata-title', courseData.title);
+          muxPlayer.setAttribute('metadata-description', courseData.description || '');
+          
+          // Replace container content with player
+          container.innerHTML = '';
+          container.appendChild(muxPlayer);
+          container.setAttribute('data-loaded', 'true');
+          
+        } catch (error) {
+          container.innerHTML = '<div class="text-danger text-center py-2">حدث خطأ أثناء تحميل الفيديو</div>';
+        }
+      }
+    }
+
+    document.getElementById('addPlaylistForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const res = await fetch(`${BASE_URL}/playlists`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token },
+        body: formData
+      });
+      const result = await res.json();
+      if (result.success) {
+        bootstrap.Modal.getInstance(document.getElementById('addPlaylistModal')).hide();
+        e.target.reset();
+        showToast('Playlist created successfully!');
+        loadPlaylists();
+      } else {
+        showToast(result.message || 'Error creating playlist', 'danger');
+      }
+    });
+
+    document.getElementById('editPlaylistForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const playlistId = formData.get('id');
+      const res = await fetch(`${BASE_URL}/playlists/${playlistId}`, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token },
+        body: formData
+      });
+      const result = await res.json();
+      if (result.success) {
+        bootstrap.Modal.getInstance(document.getElementById('editPlaylistModal')).hide();
+        showToast('Playlist updated successfully!');
+        loadPlaylists();
+      } else {
+        showToast(result.message || 'Error updating playlist', 'danger');
+      }
+    });
+
+    // Student Management Functions
+    let allStudents = []; // To store all students for searching
+
+    // Function to load students for a specific playlist
+    async function loadPlaylistStudents(playlistId) {
+      // Clear previous data immediately
+      const tableBody = document.getElementById('playlistStudentsTableBody');
+      const noStudentsMessage = document.getElementById('noStudentsMessage');
+      tableBody.innerHTML = '';
+      noStudentsMessage.classList.add('d-none');
+      try {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center">Loading students...</td></tr>';
+
+        // Debug: log playlistId before fetch
+       
+
+        const res = await fetch(`${BASE_URL}/playlists/${playlistId}/students`, {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+
+        const result = await res.json();
+        // Use tableBody and noStudentsMessage already declared above
+
+      
+
+        // Check if data is an array or has a students property
+        const studentsData = Array.isArray(result.data) ? result.data : (result.data.students || []);
+
+        if (result.success && studentsData.length > 0) {
+          tableBody.innerHTML = '';
+          noStudentsMessage.classList.add('d-none');
+
+          studentsData.forEach(student => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${student.name || 'N/A'}</td>
+              <td>${student.email || 'N/A'}</td>
+              <td>
+                <button class="btn btn-sm btn-danger remove-student-btn" data-student-id="${student.id}">
+                  <i class="bi bi-person-dash"></i> Remove
+                </button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+
+          // Add event listeners to remove buttons
+          document.querySelectorAll('.remove-student-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const studentId = btn.getAttribute('data-student-id');
+              removeStudentFromPlaylist(studentId, playlistId);
+            });
+          });
+        } else {
+          tableBody.innerHTML = '';
+          noStudentsMessage.classList.remove('d-none');
+        }
+      } catch (error) {
+      
+        showToast('Error loading students for this playlist', 'danger');
+      }
+    }
+
+    // Function to search for students
+    async function searchStudents(query) {
+      const resultsContainer = document.getElementById('searchResults');
+      
+      try {
+        // Show loading indicator
+        resultsContainer.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        // If we haven't loaded all students yet, fetch them
+        if (allStudents.length === 0) {
+          const res = await fetch(`${BASE_URL}/students`, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            allStudents = result.data;
+          } else {
+            throw new Error(result.message || 'Failed to fetch students');
+          }
+        }
+
+        // Filter students based on search query
+        const filteredStudents = allStudents.filter(student => {
+          const searchLower = query.toLowerCase();
+          return (
+            (student.name && student.name.toLowerCase().includes(searchLower)) ||
+            (student.email && student.email.toLowerCase().includes(searchLower))
+          );
+        });
+
+        displaySearchResults(filteredStudents);
+      } catch (error) {
+        console.error('Error searching for students:', error);
+        resultsContainer.innerHTML = '<p class="text-danger p-3">Error loading search results. Please try again.</p>';
+        showToast('Error searching for students', 'danger');
+      }
+    }
+
+    // Function to display search results
+    function displaySearchResults(students) {
+      const resultsContainer = document.getElementById('searchResults');
+      const playlistId = document.getElementById('currentPlaylistId').value;
+
+      if (students.length === 0) {
+        resultsContainer.innerHTML = '<p class="text-warning">No students found matching your search.</p>';
+        return;
+      }
+
+      resultsContainer.innerHTML = `
+        <div class="table-responsive">
+          <table class="table table-dark table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="searchResultsBody"></tbody>
+          </table>
+        </div>
+      `;
+
+      const tableBody = document.getElementById('searchResultsBody');
+      
+      // Get current playlist students
+      const currentPlaylistStudents = document.getElementById('playlistStudentsTableBody')
+        .querySelectorAll('tr')
+        .forEach(row => {
+          const studentId = row.querySelector('.remove-student-btn')?.getAttribute('data-student-id');
+          if (studentId) {
+            // Check if this student is in the search results
+            const studentInSearch = students.find(s => s.id === studentId);
+            if (studentInSearch) {
+              studentInSearch.isAdded = true;
+            }
+          }
+        });
+
+      students.forEach(student => {
+        const row = document.createElement('tr');
+        const isAdded = student.isAdded;
+        row.innerHTML = `
+          <td>${student.name || 'N/A'}</td>
+          <td>${student.email || 'N/A'}</td>
+          <td>
+            <button class="btn btn-sm ${isAdded ? 'btn-secondary' : 'btn-success'} add-student-btn" 
+                    data-student-id="${student.id}"
+                    ${isAdded ? 'disabled' : ''}>
+              <i class="bi ${isAdded ? 'bi-check-circle' : 'bi-person-plus'}"></i> 
+              ${isAdded ? 'Added' : 'Add'}
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      // Add event listeners to add buttons
+      document.querySelectorAll('.add-student-btn').forEach(btn => {
+        if (!btn.disabled) {  // Only add listener to enabled buttons
+          btn.addEventListener('click', async () => {
+            const studentId = btn.getAttribute('data-student-id');
+            addStudentToPlaylist(studentId, playlistId);
+          });
+        }
+      });
+    }
+
+    // Function to add a student to a playlist
+    async function addStudentToPlaylist(studentId, playlistId) {
+      try {
+        const res = await fetch(`${BASE_URL}/students/${studentId}/playlists/${playlistId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          }
+        });
+
+        const result = await res.json();
+        
+        // Check if the response is successful or if the result indicates success
+        if (res.ok || (result && result.success)) {
+          showToast('Student added to playlist successfully!');
+          // Mark student as added in the allStudents array
+          const studentIndex = allStudents.findIndex(s => s.id === studentId);
+          if (studentIndex !== -1) {
+            allStudents[studentIndex].isAdded = true;
+          }
+          // Refresh the list of students in the playlist
+          loadPlaylistStudents(playlistId);
+          // Remove the add button for the added student
+          const addButton = document.querySelector(`.add-student-btn[data-student-id="${studentId}"]`);
+          if (addButton) {
+            addButton.disabled = true;
+            addButton.innerHTML = '<i class="bi bi-check-circle"></i> Added';
+            addButton.classList.remove('btn-success');
+            addButton.classList.add('btn-secondary');
+          }
+          // Refresh search results if a search is active
+          const searchInput = document.getElementById('studentSearchInput');
+          const query = searchInput.value.trim();
+          if (query.length >= 3) {
+            searchStudents(query);
+          }
+        } else {
+          // Only show error if the result explicitly indicates failure
+          if (result && result.success === false) {
+            showToast(result.message );
+          } else {
+            // Fallback: treat as success if no clear error indication
+            showToast('Student added to playlist successfully!');
+            // Mark student as added in the allStudents array
+            const studentIndex = allStudents.findIndex(s => s.id === studentId);
+            if (studentIndex !== -1) {
+              allStudents[studentIndex].isAdded = true;
+            }
+            loadPlaylistStudents(playlistId);
+            const addButton = document.querySelector(`.add-student-btn[data-student-id="${studentId}"]`);
+            if (addButton) {
+              addButton.disabled = true;
+              addButton.innerHTML = '<i class="bi bi-check-circle"></i> Added';
+              addButton.classList.remove('btn-success');
+              addButton.classList.add('btn-secondary');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Network error adding student to playlist:', error);
+        showToast('Network error. Please try again.', 'danger');
+      }
+    }
+
+    // Function to remove a student from a playlist
+    async function removeStudentFromPlaylist(studentId, playlistId) {
+      try {
+        // Confirm before removing
+        const result = await Swal.fire({
+          title: 'Remove Student',
+          text: 'Are you sure you want to remove this student from the playlist?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, remove',
+          cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) return;
+
+        // API endpoint for removing a student from a playlist
+        // Note: You may need to create this endpoint in your backend
+        const res = await fetch(`${BASE_URL}/students/${studentId}/playlists/${playlistId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          }
+        });
+
+        const apiResult = await res.json();
+        if (apiResult.success) {
+          showToast('Student removed from playlist successfully!');
+          
+          // Mark student as not added in the allStudents array
+          const studentIndex = allStudents.findIndex(student => student.id == studentId);
+          if (studentIndex !== -1) {
+            allStudents[studentIndex].isAdded = false;
+          }
+          
+          // Refresh the list of students in the playlist
+          loadPlaylistStudents(playlistId);
+          // Refresh search results if a search is active
+          const searchInput = document.getElementById('studentSearchInput');
+          const query = searchInput.value.trim();
+          if (query.length >= 3) {
+            searchStudents(query);
+          }
+        } else {
+          showToast(apiResult.message || 'Error removing student from playlist', 'danger');
+        }
+      } catch (error) {
+     
+        showToast('Error removing student from playlist', 'danger');
+      }
+    }
+
+    // Event listener for the Manage Students button
+    document.addEventListener('click', event => {
+      if (event.target.closest('.manage-students-btn')) {
+        const button = event.target.closest('.manage-students-btn');
+        let playlistId = button.getAttribute('data-id');
+        const playlistTitle = button.getAttribute('data-title');
+
+        // Defensive: trim and check playlistId
+        playlistId = playlistId ? playlistId.trim() : '';
+        if (!playlistId) {
+          showToast('Invalid playlist ID', 'danger');
+          return;
+        }
+
+        // Set the playlist ID and title in the modal
+        document.getElementById('currentPlaylistId').value = playlistId;
+        document.getElementById('playlistTitle').textContent = playlistTitle;
+
+        // Clear search input and results
+        document.getElementById('studentSearchInput').value = '';
+        document.getElementById('searchResults').innerHTML = '';
+
+        // Clear students table and message
+        document.getElementById('playlistStudentsTableBody').innerHTML = '';
+        document.getElementById('noStudentsMessage').classList.add('d-none');
+
+        // Debug: log playlistId
+
+        // Load students for this playlist
+        loadPlaylistStudents(playlistId);
+
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('manageStudentsModal')).show();
+      }
+    });
+
+    // Event listener for the search button
+    document.getElementById('searchStudentsBtn').addEventListener('click', () => {
+      const query = document.getElementById('studentSearchInput').value.trim();
+      if (query) {
+        searchStudents(query);
+      } else {
+        document.getElementById('searchResults').innerHTML = '';
+      }
+    });
+
+    // Debounce function to improve search performance
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Debounced search function
+    const debouncedSearch = debounce((query) => {
+      if (query.length >= 3) {
+        searchStudents(query);
+      } else if (query.length === 0) {
+        document.getElementById('searchResults').innerHTML = '';
+      }
+    }, 300); // 300ms delay
+
+    // Event listener for the search input (search as you type with debouncing)
+    document.getElementById('studentSearchInput').addEventListener('input', event => {
+      const query = event.target.value.trim();
+      debouncedSearch(query);
+    });
+
+    // Global playlist search functionality
+    let allPlaylists = []; // Store all playlists for searching
+    let isSearchMode = false; // Track if we're in search mode
+
+    // Function to search playlists and courses (client-side only)
+    function searchPlaylistsAndCourses(query) {
+      if (!query.trim()) {
+        // If search is empty, show all playlists
+        isSearchMode = false;
+        loadPlaylists();
+        return;
+      }
+
+      isSearchMode = true;
+      const searchLower = query.toLowerCase();
+      
+      // Get all playlist cards currently displayed
+      const playlistCards = document.querySelectorAll('.card.mb-4.shadow');
+      let matchingCount = 0;
+      
+      playlistCards.forEach(card => {
+        // Get playlist title (h5 tag)
+        const playlistTitle = card.querySelector('h5')?.textContent?.toLowerCase() || '';
+        // Get playlist description (p tag with text-warning class)
+        const playlistDescription = card.querySelector('p.text-warning')?.textContent?.toLowerCase() || '';
+        
+        // Get all course titles and descriptions from the card
+        const courseTitles = Array.from(card.querySelectorAll('.course-title')).map(el => el.textContent?.toLowerCase() || '');
+        const courseDescriptions = Array.from(card.querySelectorAll('.course-description')).map(el => el.textContent?.toLowerCase() || '');
+        
+        // Also search in any text content within the card
+        const allTextContent = card.textContent?.toLowerCase() || '';
+        
+        // Check if playlist matches
+        const playlistMatch = playlistTitle.includes(searchLower) || playlistDescription.includes(searchLower);
+        
+        // Check if any course matches
+        const courseMatch = courseTitles.some(title => title.includes(searchLower)) || 
+                           courseDescriptions.some(desc => desc.includes(searchLower));
+        
+        // Check if search term appears anywhere in the card
+        const generalMatch = allTextContent.includes(searchLower);
+        
+        if (playlistMatch || courseMatch || generalMatch) {
+          card.style.display = 'block';
+          matchingCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Update the container to show search results
+      updateSearchResults(matchingCount, query);
+    }
+
+    // Function to update search results display
+    function updateSearchResults(matchingCount, searchQuery) {
+      const container = document.getElementById('playlistsContainer');
+      
+      // Remove any existing search header
+      const existingHeader = container.querySelector('.search-results-header');
+      if (existingHeader) {
+        existingHeader.remove();
+      }
+      
+      if (matchingCount === 0) {
+        // Show no results message
+        const noResultsDiv = document.createElement('div');
+        noResultsDiv.className = 'alert alert-info search-results-header';
+        noResultsDiv.innerHTML = `
+          <i class="bi bi-search"></i> No playlists found matching "${searchQuery}"
+          <button class="btn btn-sm btn-outline-light ms-2" onclick="clearSearch()">
+            <i class="bi bi-x"></i> Clear Search
+          </button>
+        `;
+        container.insertBefore(noResultsDiv, container.firstChild);
+      } else {
+        // Show results header
+        const resultsDiv = document.createElement('div');
+        resultsDiv.className = 'alert alert-success mb-3 search-results-header';
+        resultsDiv.innerHTML = `
+          <i class="bi bi-search"></i> Found ${matchingCount} playlist(s) matching "${searchQuery}"
+          <button class="btn btn-sm btn-outline-light ms-2" onclick="clearSearch()">
+            <i class="bi bi-x"></i> Clear Search
+          </button>
+        `;
+        container.insertBefore(resultsDiv, container.firstChild);
+      }
+    }
+
+    // Function to clear search and show all playlists
+    function clearSearch() {
+      document.getElementById('playlistSearchInput').value = '';
+      isSearchMode = false;
+      
+      // Show all playlist cards
+      const playlistCards = document.querySelectorAll('.card.mb-4.shadow');
+      playlistCards.forEach(card => {
+        card.style.display = 'block';
+      });
+      
+      // Remove search results header
+      const existingHeader = document.querySelector('.search-results-header');
+      if (existingHeader) {
+        existingHeader.remove();
+      }
+    }
+
+    // Event listener for playlist search button
+    document.getElementById('playlistSearchBtn').addEventListener('click', () => {
+      const query = document.getElementById('playlistSearchInput').value.trim();
+      searchPlaylistsAndCourses(query);
+    });
+
+    // Event listener for playlist search input (search as you type)
+    document.getElementById('playlistSearchInput').addEventListener('input', (event) => {
+      const query = event.target.value.trim();
+      if (query.length >= 2) {
+        searchPlaylistsAndCourses(query);
+      } else if (query.length === 0) {
+        clearSearch();
+      }
+    });
+
+    loadPlaylists();
+
+    // Add event listener for removing a video from playlist
+    document.addEventListener('click', async (event) => {
+      if (event.target.closest('.remove-course-btn')) {
+        const btn = event.target.closest('.remove-course-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        if (!courseId) return;
+        const confirmResult = await Swal.fire({
+          title: 'Remove Video',
+          text: 'Are you sure you want to remove this video from the playlist? It will be available for assignment again.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, remove',
+          cancelButtonText: 'Cancel'
+        });
+        if (!confirmResult.isConfirmed) return;
+        try {
+          const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + token }
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Video removed from playlist!');
+            // Reload playlists to update UI
+            loadPlaylists();
+          } else {
+            showToast(data.message || 'Error removing video', 'danger');
+          }
+        } catch (err) {
+          showToast('Error removing video', 'danger');
+        }
+      }
+    });
+
+    // Add event listeners for editing video description
+    document.addEventListener('click', async (event) => {
+      // Edit button
+      if (event.target.closest('.edit-desc-btn')) {
+        const btn = event.target.closest('.edit-desc-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        document.getElementById(`desc-text-${courseId}`).classList.add('d-none');
+        document.getElementById(`desc-input-${courseId}`).classList.remove('d-none');
+        btn.classList.add('d-none');
+        document.querySelector(`.save-desc-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+        document.querySelector(`.cancel-desc-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+      }
+      // Cancel button
+      if (event.target.closest('.cancel-desc-btn')) {
+        const btn = event.target.closest('.cancel-desc-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        document.getElementById(`desc-text-${courseId}`).classList.remove('d-none');
+        document.getElementById(`desc-input-${courseId}`).classList.add('d-none');
+        document.querySelector(`.edit-desc-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+        document.querySelector(`.save-desc-btn[data-course-id='${courseId}']`).classList.add('d-none');
+        btn.classList.add('d-none');
+      }
+      // Save button
+      if (event.target.closest('.save-desc-btn')) {
+        const btn = event.target.closest('.save-desc-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        const input = document.getElementById(`desc-input-${courseId}`);
+        const newDesc = input.value.trim();
+        btn.disabled = true;
+        try {
+          const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify({ description: newDesc })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Description updated!');
+            document.getElementById(`desc-text-${courseId}`).textContent = newDesc;
+            document.getElementById(`desc-text-${courseId}`).classList.remove('d-none');
+            input.classList.add('d-none');
+            document.querySelector(`.edit-desc-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+            btn.classList.add('d-none');
+            document.querySelector(`.cancel-desc-btn[data-course-id='${courseId}']`).classList.add('d-none');
+            btn.disabled = false;
+          } else {
+            showToast(data.message || 'Error updating description', 'danger');
+            btn.disabled = false;
+          }
+        } catch (err) {
+          showToast('Error updating description', 'danger');
+          btn.disabled = false;
+        }
+      }
+    });
+
+    // Add event listeners for editing video title
+    document.addEventListener('click', async (event) => {
+      // Edit Title button
+      if (event.target.closest('.edit-title-btn')) {
+        const btn = event.target.closest('.edit-title-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        document.getElementById(`title-text-${courseId}`).classList.add('d-none');
+        document.getElementById(`title-input-${courseId}`).classList.remove('d-none');
+        btn.classList.add('d-none');
+        document.querySelector(`.save-title-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+        document.querySelector(`.cancel-title-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+      }
+      // Cancel Title button
+      if (event.target.closest('.cancel-title-btn')) {
+        const btn = event.target.closest('.cancel-title-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        document.getElementById(`title-text-${courseId}`).classList.remove('d-none');
+        document.getElementById(`title-input-${courseId}`).classList.add('d-none');
+        document.querySelector(`.edit-title-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+        document.querySelector(`.save-title-btn[data-course-id='${courseId}']`).classList.add('d-none');
+        btn.classList.add('d-none');
+      }
+      // Save Title button
+      if (event.target.closest('.save-title-btn')) {
+        const btn = event.target.closest('.save-title-btn');
+        const courseId = btn.getAttribute('data-course-id');
+        const input = document.getElementById(`title-input-${courseId}`);
+        const newTitle = input.value.trim();
+        btn.disabled = true;
+        try {
+          const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify({ title: newTitle })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Title updated!');
+            document.getElementById(`title-text-${courseId}`).textContent = newTitle;
+            document.getElementById(`title-text-${courseId}`).classList.remove('d-none');
+            input.classList.add('d-none');
+            document.querySelector(`.edit-title-btn[data-course-id='${courseId}']`).classList.remove('d-none');
+            btn.classList.add('d-none');
+            document.querySelector(`.cancel-title-btn[data-course-id='${courseId}']`).classList.add('d-none');
+            btn.disabled = false;
+          } else {
+            showToast(data.message || 'Error updating title', 'danger');
+            btn.disabled = false;
+          }
+        } catch (err) {
+          showToast('Error updating title', 'danger');
+          btn.disabled = false;
+        }
+      }
+    });
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    // Student Count Edit Functionality
+    document.addEventListener('click', async (event) => {
+      if (event.target.closest('.edit-student-count-btn')) {
+        const btn = event.target.closest('.edit-student-count-btn');
+        const playlistId = btn.getAttribute('data-playlist-id');
+        const displaySpan = document.querySelector(`.student-count-display[data-playlist-id="${playlistId}"]`);
+        const currentCount = displaySpan.textContent;
+        
+        // Create input field
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.value = currentCount;
+        input.className = 'form-control form-control-sm d-inline-block';
+        input.style.width = '80px';
+        input.style.marginRight = '5px';
+        
+        // Create save button
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-sm btn-success me-1';
+        saveBtn.innerHTML = '<i class="bi bi-check"></i>';
+        saveBtn.title = 'Save';
+        
+        // Create cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-sm btn-secondary';
+        cancelBtn.innerHTML = '<i class="bi bi-x"></i>';
+        cancelBtn.title = 'Cancel';
+        
+        // Replace display with input
+        const container = displaySpan.parentNode;
+        container.innerHTML = '';
+        container.appendChild(input);
+        container.appendChild(saveBtn);
+        container.appendChild(cancelBtn);
+        
+        input.focus();
+        input.select();
+        
+        // Save functionality
+        const saveStudentCount = async () => {
+          const newCount = parseInt(input.value);
+          console.log('🚀 saveStudentCount() called with:', { playlistId, newCount, inputValue: input.value, type: typeof newCount });
+          
+          if (isNaN(newCount) || newCount < 0) {
+            showToast('Please enter a valid number (0 or greater)', 'danger');
+            return;
+          }
+          
+          saveBtn.disabled = true;
+          try {
+            const res = await fetch(`${BASE_URL}/playlists/${playlistId}/student-count`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + token
+              },
+              body: JSON.stringify({ studentCount: newCount })
+            });
+            
+            const result = await res.json();
+            console.log('🔄 API Response received:', result);
+            
+            if (result.success) {
+              console.log('✅ Server confirmed student count update successful');
+              showToast('Student count updated successfully!');
+              
+              // Update the display with the new count first
+              console.log('🔍 Looking for display span with playlist ID:', playlistId);
+              const displaySpan = document.querySelector(`.student-count-display[data-playlist-id="${playlistId}"]`);
+              if (displaySpan) {
+                console.log('📝 Found display span, current text:', displaySpan.textContent, '-> updating to:', newCount);
+                displaySpan.textContent = newCount;
+              } else {
+                console.warn('⚠️ Display span not found for playlist:', playlistId);
+              }
+              
+              // Then restore the display
+              console.log('🔄 Restoring container HTML with new count:', newCount);
+              container.innerHTML = `
+                <i class="bi bi-people me-1"></i>
+                Student Count: 
+                <span class="student-count-display" data-playlist-id="${playlistId}">${newCount}</span>
+                <button class="btn btn-sm btn-link p-0 ms-1 edit-student-count-btn" data-playlist-id="${playlistId}" title="Edit Student Count">
+                  <i class="bi bi-pencil-square text-warning"></i>
+                </button>
+              `;
+              
+              console.log('🔄 About to call loadPlaylists()...');
+              // Finally reload the playlists
+              await loadPlaylists();
+              console.log('✅ loadPlaylists() completed');
+            } else {
+              showToast(result.message || 'Error updating student count', 'danger');
+              saveBtn.disabled = false;
+            }
+          } catch (error) {
+            console.error('Error updating student count:', error);
+            showToast('Error updating student count', 'danger');
+            saveBtn.disabled = false;
+          }
+        };
+        
+        // Cancel functionality
+        const cancelEdit = () => {
+          container.innerHTML = `
+            <i class="bi bi-people me-1"></i>
+            Student Count: 
+            <span class="student-count-display" data-playlist-id="${playlistId}">${currentCount}</span>
+            <button class="btn btn-sm btn-link p-0 ms-1 edit-student-count-btn" data-playlist-id="${playlistId}" title="Edit Student Count">
+              <i class="bi bi-pencil-square text-warning"></i>
+            </button>
+          `;
+        };
+        
+        // Event listeners
+        saveBtn.addEventListener('click', saveStudentCount);
+        cancelBtn.addEventListener('click', cancelEdit);
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            saveStudentCount();
+          } else if (e.key === 'Escape') {
+            cancelEdit();
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

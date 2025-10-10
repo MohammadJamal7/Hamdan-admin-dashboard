@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Students</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.7) !important;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .navbar-nav .nav-link {
+      color: #fff !important;
+      transition: color 0.3s ease;
+    }
+    .navbar-nav .nav-link:hover {
+      color: #ffc107 !important;
+    }
+    .container {
+      margin-top: 2rem;
+    }
+    .table {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .table th,
+    .table td {
+      vertical-align: middle;
+    }
+    .table-dark th {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .modal-content {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .form-control,
+    .form-select {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    
+    /* Fix for dropdown option text color */
+    .form-select option {
+      background-color: #343a40;
+      color: #fff;
+    }
+    
+    /* Custom styling for page size selector */
+    #pageSizeSelect {
+      padding: 0.375rem 2rem 0.375rem 0.75rem;
+      transition: all 0.3s ease;
+    }
+    
+    #pageSizeSelect:focus {
+      box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .form-control::placeholder {
+      color: #ccc;
+    }
+    .btn {
+      border-radius: 12px;
+    }
+    .btn-primary {
+      background-color: #6a82fb;
+      border-color: #6a82fb;
+    }
+    .btn-warning {
+      background-color: #ffb347;
+      border-color: #ffb347;
+      color: #000;
+    }
+    .btn-danger {
+      background-color: #ff5e62;
+      border-color: #ff5e62;
+    }
+    .btn-info {
+      background-color: #17a2b8;
+      border-color: #17a2b8;
+      color: #fff;
+    }
+    .btn-info:hover {
+      color: #fff;
+      background-color: #138496;
+      border-color: #117a8b;
+    }
+    .btn-outline-light:hover {
+      background-color: #fff;
+      color: #000;
+    }
+    /* Add these styles to your existing <style> section */
+    .table {
+      font-size: 0.9rem;
+    }
+    
+    .table td, .table th {
+      padding: 0.5rem;
+      white-space: normal;
+    }
+    
+    .table td img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+    }
+    
+    .btn-sm {
+      padding: 0.25rem;
+      font-size: 0.8rem;
+      min-width: 80px;
+      margin: 1px 0;
+    }
+    
+    .container {
+      max-width: 98%;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-3">
+    <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <div class="container mt-4">
+    <h4 class="mb-3">Students</h4>
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <div class="d-flex gap-2 align-items-center">
+        <input type="text" id="studentSearchInput" class="form-control" placeholder="Search students by username, email, or name..." style="max-width: 300px;" />
+        <button class="btn btn-outline-light" id="clearStudentSearch" type="button" style="display:none;">Clear</button>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="me-2">Show</span>
+        <select id="pageSizeSelect" class="form-select" style="width: auto; background-color: rgba(255, 255, 255, 0.1); color: #fff; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2);">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+        </select>
+        <span class="ms-2">per page</span>
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">Add Student</button>
+      <div id="studentCountInfo" class="text-light">Loading students...</div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Image</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Name</th>
+            <th>Watching Hours</th>
+            <th>Blocked?</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTableBody">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <div class="d-flex justify-content-center mt-4">
+      <nav aria-label="Student pagination">
+        <ul class="pagination" id="paginationContainer">
+          <!-- Pagination will be added by JS -->
+        </ul>
+      </nav>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center my-4" style="display: none;">
+      <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2 text-light">Loading students data...</p>
+    </div>
+  </div>
+
+  <!-- Add Student Modal -->
+  <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addStudentModalLabel">Add Student</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="addStudentForm">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" required />
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" required />
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" required />
+            </div>
+            <div class="mb-3">
+              <label for="name" class="form-label">Name</label>
+              <input type="text" class="form-control" id="name" required />
+            </div>
+            <div class="mb-3">
+              <label for="phone" class="form-label">Phone</label>
+              <input type="text" class="form-control" id="phone" />
+            </div>
+            <div class="mb-3">
+              <label for="image" class="form-label">Profile Image</label>
+              <input type="file" name="image" class="form-control" id="image" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+            <button type="submit" class="btn btn-primary">Add Student</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Student Modal -->
+  <div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editStudentModalLabel">Edit Student</h5>
+          <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+        </div>
+        <form id="editStudentForm">
+          <div class="modal-body">
+            <input type="hidden" id="editStudentId" />
+            <div class="mb-3">
+              <label for="editUsername" class="form-label">Username</label>
+              <input type="text" class="form-control" id="editUsername" required />
+            </div>
+            <div class="mb-3">
+              <label for="editEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="editEmail" required />
+            </div>
+            <div class="mb-3">
+              <label for="editName" class="form-label">Name</label>
+              <input type="text" class="form-control" id="editName" required />
+            </div>
+            <div class="mb-3">
+              <label for="editPhone" class="form-label">Phone</label>
+              <input type="text" class="form-control" id="editPhone" />
+            </div>
+            <div id="errorDisplay" class="text-danger"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11"></div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Client-side pagination utility -->
+  <script src="js/client-pagination.js"></script>
+
+  <script>
+    // Toast notification function
+    function showToast(message, type = 'success') {
+      const toastId = `toast-${Date.now()}`;
+      const toastHTML = `
+        <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">
+              ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>
+      `;
+      const toastContainer = document.getElementById('toastContainer');
+      toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+      const toastEl = document.getElementById(toastId);
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const API_BASE = 'https://api.hamdan.help/api';
+      //const API_BASE = 'http://localhost:3000/api';
+      const token = localStorage.getItem('token');
+      let allStudents = [];
+      let pagination;
+
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const studentsTableBody = document.getElementById('studentsTableBody');
+      const paginationContainer = document.getElementById('paginationContainer');
+      const pageSizeSelect = document.getElementById('pageSizeSelect');
+      const studentCountInfo = document.getElementById('studentCountInfo');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+
+      async function loadStudents() {
+        try {
+          // Show loading indicator
+          loadingIndicator.style.display = 'block';
+          studentsTableBody.innerHTML = '';
+          paginationContainer.innerHTML = '';
+          studentCountInfo.textContent = 'Loading students...';
+          
+          const res = await fetch(`${API_BASE}/students`, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+
+          if (res.status === 401) {
+            showToast('Unauthorized access. Please log in again.', 'danger');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const result = await res.json();
+          allStudents = result.success && Array.isArray(result.data) ? result.data : [];
+          
+          // Hide loading indicator
+          loadingIndicator.style.display = 'none';
+          
+          // Initialize pagination
+          initPagination(allStudents);
+
+          // Event delegation for all button actions
+          studentsTableBody.addEventListener('click', async (event) => {
+            const button = event.target;
+            const studentId = button.getAttribute('data-student-id');
+
+            if (!studentId) return;
+
+            // Handle untie device action
+            if (button.classList.contains('untie-device-btn')) {
+              const result = await Swal.fire({
+                title: 'Are you sure you want to untie the device from this account?',
+                text: 'The student will be able to login from any device after this action.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, untie device',
+                cancelButtonText: 'No, cancel'
+              });
+
+              if (result.isConfirmed) {
+                try {
+                  const res = await fetch(`${API_BASE}/students/${studentId}/untie-device`, {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + token }
+                  });
+
+                  const response = await res.json();
+                  if (response.success) {
+                    showToast('Device untied successfully!', 'success');
+                    loadStudents();
+                  } else {
+                    showToast(`Failed to untie device: ${response.message}`, 'danger');
+                  }
+                } catch (err) {
+                  console.error('Error untying device:', err);
+                  showToast('Error untying device. Please try again.', 'danger');
+                }
+              }
+            }
+
+            // Handle block/unblock action
+            if (button.classList.contains('block-unblock-btn')) {
+              const isBlocked = button.classList.contains('btn-danger');
+              const action = isBlocked ? 'block' : 'unblock';
+
+              const result = await Swal.fire({
+                title: `Are you sure you want to ${action} this student?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+              });
+
+              if (result.isConfirmed) {
+                try {
+                  const res = await fetch(`${API_BASE}/students/${studentId}/${action}`, {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + token }
+                  });
+
+                  const response = await res.json();
+                  if (response.success) {
+                    showToast(`Student ${action}ed successfully!`, 'success');
+                    loadStudents();
+                  } else {
+                    showToast(`Failed to ${action} student: ${response.message}`, 'danger');
+                  }
+                } catch (err) {
+                  console.error(`Error ${action}ing student:`, err);
+                  showToast(`Error ${action}ing student. Please try again.`, 'danger');
+                }
+              }
+            }
+
+            // Handle delete action
+            if (button.classList.contains('delete-btn')) {
+              const result = await Swal.fire({
+                title: 'Are you sure you want to delete this student?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+              });
+
+              if (result.isConfirmed) {
+                try {
+                  const res = await fetch(`${API_BASE}/students/${studentId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: 'Bearer ' + token }
+                  });
+
+                  const response = await res.json();
+                  if (response.success) {
+                    showToast('Student deleted successfully!', 'success');
+                    loadStudents();
+                  } else {
+                    showToast(`Failed to delete student: ${response.message}`, 'danger');
+                  }
+                } catch (err) {
+                  console.error('Error deleting student:', err);
+                  showToast('Error deleting student. Please try again.', 'danger');
+                }
+              }
+            }
+
+            // Handle edit action
+            if (button.classList.contains('edit-btn')) {
+              const student = allStudents.find(s => s.id === studentId);
+              if (!student) {
+                showToast('Error: Student not found.', 'danger');
+                return;
+              }
+
+              document.getElementById('editStudentId').value = student.id;
+              document.getElementById('editUsername').value = student.username || '';
+              document.getElementById('editEmail').value = student.email || '';
+              document.getElementById('editName').value = student.name || '';
+              document.getElementById('editPhone').value = student.phone || '';
+
+              const editModal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+              editModal.show();
+            }
+          });
+        } catch (err) {
+          console.error(err);
+          studentsTableBody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Error fetching students</td></tr>`;
+        }
+      }
+
+      // Add Student Form Handler
+      document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        formData.append('username', document.getElementById('username').value);
+        formData.append('email', document.getElementById('email').value);
+        formData.append('password', document.getElementById('password').value);
+        formData.append('name', document.getElementById('name').value);
+        formData.append('phone', document.getElementById('phone').value);
+        formData.append('image', document.getElementById('image').files[0]);
+
+        try {
+          const response = await fetch(`${API_BASE}/add-student`, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + token
+            },
+            body: formData
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            showToast('Student added successfully!');
+            e.target.reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
+            modal.hide();
+            loadStudents();
+          } else {
+            showToast(result.message, 'danger');
+          }
+        } catch (error) {
+          console.error('Error adding student:', error);
+          showToast('Something went wrong while adding student.', 'danger');
+        }
+      });
+
+      // Edit Student Form Handler
+      document.getElementById('editStudentForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const studentId = document.getElementById('editStudentId').value;
+        const formData = new FormData();
+        formData.append('id', studentId);
+        formData.append('username', document.getElementById('editUsername').value);
+        formData.append('email', document.getElementById('editEmail').value);
+        formData.append('name', document.getElementById('editName').value);
+        formData.append('phone', document.getElementById('editPhone').value);
+
+        try {
+          const res = await fetch(`${API_BASE}/students/${studentId}`, {
+            method: 'PUT',
+            headers: { Authorization: 'Bearer ' + token },
+            body: formData
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('Error response from server:', text);
+            document.getElementById('errorDisplay').innerText = `Failed to update student. Server responded with status ${res.status}: ${res.statusText}\n${text}`;
+            return;
+          }
+
+          const result = await res.json();
+          if (result.success) {
+            showToast('Student updated successfully!', 'success');
+            const editStudentModal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
+            editStudentModal.hide();
+            loadStudents();
+          } else {
+            document.getElementById('errorDisplay').innerText = `Failed to update student: ${result.message}`;
+          }
+        } catch (err) {
+          console.error('Fetch error:', err);
+          document.getElementById('errorDisplay').innerText = `Error updating student: ${err.message}`;
+        }
+      });
+
+      // Initial load
+      loadStudents();
+
+      // Initialize pagination
+      function initPagination(students) {
+        // Create pagination instance
+        pagination = new ClientPagination({
+          pageSize: parseInt(pageSizeSelect.value, 10) || 50,
+          renderCallback: renderStudentsTable,
+          countCallback: updateStudentCount
+        });
+        
+        // Set data and render first page
+        pagination.setData(students);
+        
+        // Setup pagination controls
+        setupPaginationControls();
+      }
+      
+      // Update student count display
+      function updateStudentCount(counts) {
+        studentCountInfo.textContent = `Showing ${counts.start}-${counts.end} of ${counts.total} students`;
+        if (counts.total !== counts.totalOriginal) {
+          studentCountInfo.textContent += ` (filtered from ${counts.totalOriginal})`;
+        }
+      }
+      
+      // Setup pagination control events
+      function setupPaginationControls() {
+        // Render pagination UI
+        paginationContainer.innerHTML = pagination.generatePaginationHTML();
+        
+        // Add event listeners to pagination controls
+        paginationContainer.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (e.target.tagName === 'A' || e.target.parentElement.tagName === 'A') {
+            const pageLink = e.target.closest('a');
+            if (!pageLink) return;
+            
+            const page = pageLink.getAttribute('data-page');
+            if (page === 'prev') {
+              pagination.prevPage();
+            } else if (page === 'next') {
+              pagination.nextPage();
+            } else {
+              pagination.goToPage(parseInt(page, 10));
+            }
+            
+            // Update pagination UI
+            paginationContainer.innerHTML = pagination.generatePaginationHTML();
+          }
+        });
+        
+        // Page size change handler
+        pageSizeSelect.addEventListener('change', () => {
+          pagination.setPageSize(pageSizeSelect.value);
+          paginationContainer.innerHTML = pagination.generatePaginationHTML();
+        });
+      }
+      
+      // Render students table with chunked rendering for better performance
+      function renderStudentsTable(students) {
+        studentsTableBody.innerHTML = '';
+        if (students.length === 0) {
+          studentsTableBody.innerHTML = `<tr><td colspan="11" class="text-center text-warning">No students found</td></tr>`;
+          return;
+        }
+        
+        // Use optimized chunked rendering for faster performance
+        const chunkSize = 25; // Increased chunk size for better performance
+        let currentIndex = 0;
+        
+        function renderChunk() {
+          const fragment = document.createDocumentFragment();
+          const endIndex = Math.min(currentIndex + chunkSize, students.length);
+          
+          for (let i = currentIndex; i < endIndex; i++) {
+            const student = students[i];
+            const row = document.createElement('tr');
+            
+            let imgUrl = student.image || 'images/profile-placeholder.svg';
+            if (imgUrl && !/^https?:\/\//i.test(imgUrl)) {
+              imgUrl = 'https://api.hamdan.help/' + imgUrl.replace(/^\/*/, '');
+            }
+            
+            row.innerHTML = `
+              <td>${(pagination.currentPage - 1) * pagination.pageSize + i + 1}</td>
+              <td><img src="${imgUrl}" alt="Profile" class="rounded-circle border" style="width:48px;height:48px;object-fit:cover;background:#fff;"></td>
+              <td>${student.username}</td>
+              <td>${student.email}</td>
+              <td>${student.phone || '-'}</td>
+              <td>${student.name || '-'}</td>
+              <td>${student.totalWatchingHours || 0} hrs</td>
+              <td>
+                <center>
+                  ${student.isBlocked ? 'Yes' : 'No'}
+                  <br>
+                  <button class="btn btn-sm ${student.isBlocked ? 'btn-success' : 'btn-danger'} block-unblock-btn" 
+                          data-student-id="${student.id}">
+                    ${student.isBlocked ? 'Unblock' : 'Block'}
+                  </button>
+                </center>
+              </td>
+              <td>${new Date(student.createdAt).toLocaleDateString()}</td>
+              <td>
+                <div class="d-flex gap-2 flex-column align-items-center">
+                  <button class="btn btn-sm btn-warning edit-btn w-100" data-student-id="${student.id}">Edit</button>
+                  ${student.lastLoginDeviceId ? `
+                  <button class="btn btn-sm btn-info untie-device-btn w-100" data-student-id="${student.id}">Untie Device</button>
+                  ` : ''}
+                  <button class="btn btn-sm btn-danger delete-btn w-100" data-student-id="${student.id}">Delete</button>
+                </div>
+              </td>
+            `;
+            fragment.appendChild(row);
+          }
+          
+          studentsTableBody.appendChild(fragment);
+          currentIndex = endIndex;
+          
+          if (currentIndex < students.length) {
+            // Continue rendering next chunk in the next animation frame
+            window.requestAnimationFrame(renderChunk);
+          }
+        }
+        
+        // Start rendering chunks
+        renderChunk();
+      }
+
+      // Search/filter logic with debounce for better performance
+      const searchInput = document.getElementById('studentSearchInput');
+      const clearBtn = document.getElementById('clearStudentSearch');
+      
+      // Debounce function to limit how often the search is performed
+      function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+      
+      // Perform search with optimized debounce
+      const performSearch = debounce(function(query) {
+        if (query.length > 0) {
+          clearBtn.style.display = '';
+        } else {
+          clearBtn.style.display = 'none';
+        }
+        
+        // Use pagination's optimized search method
+        pagination.searchByText(query, ['username', 'email', 'name', 'phone']);
+        
+        // Update pagination UI
+        paginationContainer.innerHTML = pagination.generatePaginationHTML();
+      }, 150); // Reduced debounce delay for faster response
+      
+      // Search input event with minimum length optimization
+      searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // Only search if query is empty (to clear) or has at least 2 characters
+        if (query.length === 0 || query.length >= 2) {
+          performSearch(query);
+        }
+      });
+
+      // Clear search button
+      clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        this.style.display = 'none';
+        pagination.filterData(null); // Clear all filters
+        paginationContainer.innerHTML = pagination.generatePaginationHTML();
+      });
+    });
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

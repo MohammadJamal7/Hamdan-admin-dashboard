@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Notifications</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+  
+  
+    .container {
+      margin-top: 2rem;
+    }
+  
+    .table {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      ;
+    }
+  
+    .table th,
+    .table td {
+      vertical-align: middle;
+      
+    }
+  
+    .table-dark th {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+  
+    .modal-content {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+  
+    .form-control,
+    .form-select {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      
+    }
+  
+    .form-control::placeholder {
+      color: #ccc;
+    }
+  
+    .btn-primary {
+      background-color: #6a82fb;
+      border-color: #6a82fb;
+      border-radius: 12px;
+    }
+  
+    .btn-warning {
+      background-color: #ffb347;
+      border-color: #ffb347;
+      color: #000;
+      border-radius: 12px;
+    }
+  
+    .btn-danger {
+      background-color: #ff5e62;
+      border-color: #ff5e62;
+      border-radius: 12px;
+    }
+  
+    .btn-secondary {
+      border-radius: 12px;
+    }
+  
+    .btn-outline-light {
+      border-radius: 12px;
+    }
+  
+    .btn-outline-light:hover {
+      background-color: #fff;
+      color: #000;
+    }
+  
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      color: #fff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+  
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+    }
+  
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 1080;
+    }
+  
+    .toast {
+      backdrop-filter: blur(5px);
+    }
+ 
+
+
+  </style>
+  
+</head>
+<body>
+ 
+  
+  <div class="container mt-3">
+    <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+
+  <div class="container mt-4">
+    <h4 class="mb-3">Notifications</h4>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#sendNotificationModal">Send Notification</button>
+
+    <!-- Notifications Table -->
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Message</th>
+            <th>Type</th>
+            <th>Playlist</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="notificationsTableBody">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+    </div>
+    <div id="errorDisplay" class="text-danger mt-3"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Send Notification Modal -->
+  <div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-labelledby="sendNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendNotificationModalLabel">Send Notification</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="sendNotificationForm">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="message" class="form-label">Message</label>
+              <textarea class="form-control" id="message" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="type" class="form-label">Type</label>
+              <select class="form-select" id="type" required>
+                <option value="general">General</option>
+                <option value="welcome">Welcome</option>
+                <option value="course">Course</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="playlist" class="form-label">Playlist</label>
+              <select class="form-select" id="playlist" required>
+                <option value="">Loading playlists...</option>
+              </select>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Send</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    function showToast(message, type = 'success') {
+      const toastId = `toast-${Date.now()}`;
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-bg-${type} border-0`;
+      toast.id = toastId;
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+
+      document.getElementById('toastContainer').appendChild(toast);
+
+      const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+      bsToast.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const API_BASE = 'https://api.hamdan.help/api';
+       // const API_BASE = 'http://localhost:3000/api';
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          console.log('No token found, redirecting to login');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        console.log('Token found:', token.substring(0, 20) + '...'); // Only log first 20 chars for security
+
+        const notificationsTableBody = document.getElementById('notificationsTableBody');
+        const sendNotificationForm = document.getElementById('sendNotificationForm');
+        
+        // Load notifications when page loads
+        loadNotifications();
+        loadPlaylists();
+
+
+
+      async function loadPlaylists() {
+        try {
+          const res = await fetch(`${API_BASE}/playlists`, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+
+          const result = await res.json();
+          const playlistSelect = document.getElementById('playlist');
+          playlistSelect.innerHTML = '';
+          
+          // Add "All Students" option
+          const allOption = document.createElement('option');
+          allOption.value = 'all';
+          allOption.textContent = 'All Students';
+          playlistSelect.appendChild(allOption);
+          
+          if (result.success && result.data && result.data.length > 0) {
+            result.data.forEach(playlist => {
+              const option = document.createElement('option');
+              option.value = playlist.id || playlist._id;
+              option.textContent = playlist.title;
+              playlistSelect.appendChild(option);
+            });
+          } else {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No playlists available';
+            playlistSelect.appendChild(option);
+          }
+        } catch (error) {
+          console.error('Error loading playlists:', error);
+          const playlistSelect = document.getElementById('playlist');
+          playlistSelect.innerHTML = '<option value="">Error loading playlists</option>';
+        }
+      }
+
+      async function loadNotifications() {
+        try {
+          const res = await fetch(`${API_BASE}/notifications`, {
+            headers: { Authorization: 'Bearer ' + token }
+          });
+
+          if (res.status === 401) {
+            showToast('Unauthorized access. Please log in again.', 'danger');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const result = await res.json();
+          notificationsTableBody.innerHTML = '';
+
+          if (result.success && result.data.length > 0) {
+            result.data.forEach((notification, index) => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${notification.message}</td>
+                <td>${notification.type}</td>
+                <td>${notification.playlist ? notification.playlist.title : 'All Students'}</td>
+                <td>${new Date(notification.createdAt).toLocaleDateString()}</td>
+                <td>
+                  <button class="btn btn-sm btn-danger delete-btn" onclick="deleteNotification('${notification.id}')">Delete</button>
+                </td>
+              `;
+              notificationsTableBody.appendChild(row);
+            });
+          } else {
+            notificationsTableBody.innerHTML = `<tr><td colspan="6" class="text-center text-warning">No notifications found</td></tr>`;
+          }
+        } catch (err) {
+          console.error(err);
+          notificationsTableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error fetching notifications</td></tr>`;
+        }
+      }
+
+      sendNotificationForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const message = document.getElementById('message').value;
+        const type = document.getElementById('type').value || 'general';
+        const playlistValue = document.getElementById('playlist').value;
+        const playlistId = (playlistValue === 'all' || !playlistValue) ? null : playlistValue;
+
+
+        if (!message.trim()) {
+          showToast('Please enter a message', 'error');
+          return;
+        }
+
+        if (!playlistValue) {
+          showToast('Please select a playlist', 'error');
+          return;
+        }
+
+        console.log('=== FRONTEND NOTIFICATION DEBUG ===');
+        console.log('Form values:');
+        console.log('- message:', message);
+        console.log('- type:', type);
+        console.log('- playlistId:', playlistId, 'Type:', typeof playlistId);
+
+        try {
+          // Create request body based on whether a playlist is selected
+          const requestBody = { message, type, playlistId };
+          // playlistId will be null if 'all' was selected
+          
+          console.log('Request body being sent:', requestBody);
+          console.log('Sending POST request to', `${API_BASE}/notifications/send`);
+          console.log('Stringified body:', JSON.stringify(requestBody));
+
+          const res = await fetch(`${API_BASE}/notifications/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            console.log('Error response text:', text);
+            showToast(`Failed to send notification: ${res.statusText}`, 'danger');
+            return;
+          }
+
+          const result = await res.json();
+          console.log('Server response:', result);
+          console.log('Response status:', res.status);
+          console.log('=== END FRONTEND DEBUG ===');
+          
+          if (result.success) {
+            showToast('Notification sent successfully!', 'success');
+            sendNotificationForm.reset();
+            bootstrap.Modal.getInstance(document.getElementById('sendNotificationModal')).hide();
+            loadNotifications();
+          } else {
+            showToast(`Failed: ${result.message}`, 'danger');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('An error occurred while sending notification.', 'danger');
+        }
+      });
+
+      window.markAsRead = async (notificationId) => {
+        try {
+          const res = await fetch(`${API_BASE}/notifications/${notificationId}/mark-read`, {
+            method: 'PATCH',
+            headers: { Authorization: 'Bearer ' + token }
+          });
+
+          const result = await res.json();
+          if (result.success) {
+            showToast('Notification marked as read!', 'success');
+            loadNotifications();
+          } else {
+            showToast(`Failed: ${result.message}`, 'danger');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Error marking as read. Try again.', 'danger');
+        }
+      };
+
+      window.deleteNotification = async (notificationId) => {
+        const result = await Swal.fire({
+          title: 'Are you sure?',
+          text: 'You won\'t be able to revert this!',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+          try {
+            const res = await fetch(`${API_BASE}/notifications/${notificationId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (res.status === 401) {
+              showToast('Session expired. Please log in again.', 'danger');
+              localStorage.removeItem('token');
+              window.location.href = 'login.html';
+              return;
+            }
+
+            const data = await res.json();
+            if (data.success) {
+              showToast('Notification deleted successfully!', 'success');
+              loadNotifications();
+            } else {
+              showToast(data.message || 'Failed to delete notification', 'danger');
+            }
+          } catch (err) {
+            console.error(err);
+            showToast('Error deleting notification', 'danger');
+          }
+        }
+      };
+      loadNotifications();
+    });
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

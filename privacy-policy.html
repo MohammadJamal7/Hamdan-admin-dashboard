@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Admin Dashboard</title>
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <link rel="shortcut icon" href="images/logo.png" type="image/png">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Summernote CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            min-height: 100vh;
+            background-attachment: fixed;
+            background-size: cover;
+            color: #f1f1f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.7) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .navbar-nav .nav-link {
+            color: #fff !important;
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #ffc107 !important;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .card-header {
+            background-color: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-primary {
+            background-color: #6a82fb;
+            border-color: #6a82fb;
+        }
+        .btn-primary:hover {
+            background-color: #5a72eb;
+            border-color: #5a72eb;
+        }
+        .note-editor {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .note-editor .note-toolbar {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 8px;
+        }
+        .note-editor .note-editing-area {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        .note-editor .note-editable {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #fff !important;
+            padding: 20px;
+            min-height: 300px;
+        }
+        .note-editor .note-btn {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+            margin: 0 2px;
+            padding: 6px 12px;
+        }
+        .note-editor .note-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .note-editor .note-btn.active {
+            background-color: rgba(106, 130, 251, 0.3) !important;
+            border-color: #6a82fb !important;
+        }
+        .note-editor .note-btn-group {
+            margin: 0 4px;
+        }
+        .note-editor .note-btn-group .note-btn {
+            border-radius: 0;
+        }
+        .note-editor .note-btn-group .note-btn:first-child {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        .note-editor .note-btn-group .note-btn:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+        .note-editor .note-btn-group .note-btn:not(:first-child) {
+            margin-left: -1px;
+        }
+        .note-editor .note-btn-group .note-btn.active {
+            z-index: 1;
+        }
+        .note-editor .note-dropdown-menu {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        .note-editor .note-dropdown-menu .note-btn {
+            background: transparent !important;
+            border: none !important;
+            color: #fff !important;
+            width: 100%;
+            text-align: left;
+            padding: 8px 12px;
+        }
+        .note-editor .note-dropdown-menu .note-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .note-editor .note-modal {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        .note-editor .note-modal .modal-content {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        .note-editor .note-modal .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .note-editor .note-modal .modal-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .note-editor .note-modal input,
+        .note-editor .note-modal textarea {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        .note-editor .note-modal input:focus,
+        .note-editor .note-modal textarea:focus {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+        }
+        .note-editor .note-modal .btn {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+        }
+        .note-editor .note-modal .btn:hover {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .note-editor .note-modal .btn-primary {
+            background-color: #6a82fb !important;
+            border-color: #6a82fb !important;
+        }
+        .note-editor .note-modal .btn-primary:hover {
+            background-color: #5a72eb !important;
+            border-color: #5a72eb !important;
+        }
+        .note-editor a {
+            color: #6a82fb !important;
+            text-decoration: underline;
+        }
+        .note-editor a:hover {
+            color: #5a72eb !important;
+        }
+        .toast {
+            background-color:green !important;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-3">
+      <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
+        ← Back to Dashboard
+      </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>سياسة الخصوصية</span>
+                        <button class="btn btn-primary" onclick="savePrivacyPolicy()">
+                            <i class="fas fa-save"></i> حفظ التغييرات
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="privacyPolicyEditor"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999;">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/lang/summernote-ar-AR.min.js"></script>
+    <script>
+        // API Base URL
+       const API_BASE_URL = 'https://api.hamdan.help/api';
+       // const API_BASE_URL = 'http://localhost:3000/api';
+
+        // Initialize Summernote
+        $(document).ready(function() {
+            $('#privacyPolicyEditor').summernote({
+                lang: 'ar-AR',
+                height: 400,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'italic', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['height', ['height']],
+                    ['table', ['table']],
+                    ['insert', ['link']],
+                    ['view', ['fullscreen', 'codeview', 'help']],
+                    ['alignment', ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify']]
+                ],
+                styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+                fontNames: ['Arial', 'Arial Black', 'Comic Sans MS', 'Courier New', 'Helvetica', 'Times New Roman'],
+                callbacks: {
+                    onLinkAdd: function(url) {
+                        console.log('Link added:', url);
+                    }
+                },
+                placeholder: 'اكتب سياسة الخصوصية هنا...',
+                dialogsInBody: true,
+                dialogsFade: true,
+                disableDragAndDrop: true,
+                shortcuts: true,
+                styleTagsOptions: {
+                    p: {
+                        title: 'فقرة',
+                        tag: 'p'
+                    },
+                    h1: {
+                        title: 'عنوان 1',
+                        tag: 'h1'
+                    },
+                    h2: {
+                        title: 'عنوان 2',
+                        tag: 'h2'
+                    },
+                    h3: {
+                        title: 'عنوان 3',
+                        tag: 'h3'
+                    },
+                    h4: {
+                        title: 'عنوان 4',
+                        tag: 'h4'
+                    },
+                    h5: {
+                        title: 'عنوان 5',
+                        tag: 'h5'
+                    },
+                    h6: {
+                        title: 'عنوان 6',
+                        tag: 'h6'
+                    }
+                }
+            });
+
+            // Load existing privacy policy
+            loadPrivacyPolicy();
+        });
+
+        // Function to show loading overlay
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+        }
+
+        // Function to hide loading overlay
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Function to show toast message
+        function showToast(message, type = 'success') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+
+        // Function to load privacy policy
+        async function loadPrivacyPolicy() {
+            try {
+                showLoading();
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/settings/privacy-policy`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.privacyPolicy !== undefined) {
+                    $('#privacyPolicyEditor').summernote('code', data.data.privacyPolicy || '');
+                } else {
+                    $('#privacyPolicyEditor').summernote('code', '');
+                }
+            } catch (error) {
+                console.error('Error loading privacy policy:', error);
+                showToast('حدث خطأ أثناء تحميل سياسة الخصوصية', 'danger');
+                $('#privacyPolicyEditor').summernote('code', '');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Function to save privacy policy
+        async function savePrivacyPolicy() {
+            try {
+                showLoading();
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const content = $('#privacyPolicyEditor').summernote('code');
+                
+                const response = await fetch(`${API_BASE_URL}/settings/privacy-policy`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        privacyPolicy: content
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('تم حفظ سياسة الخصوصية بنجاح');
+                } else {
+                    throw new Error(data.message || 'حدث خطأ أثناء الحفظ');
+                }
+            } catch (error) {
+                console.error('Error saving privacy policy:', error);
+                showToast(error.message || 'حدث خطأ أثناء حفظ سياسة الخصوصية', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Function to handle logout
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        // Check authentication on page load
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html> 

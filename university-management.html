@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>University Management - Admin Dashboard</title>
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Custom select dropdown styling */
+    .form-select option {
+      background-color: rgba(0, 0, 0, 0.9) !important;
+      color: white !important;
+      padding: 8px 12px;
+    }
+
+    .form-select option:hover {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .form-select option:checked {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* Sidebar styles */
+    .university-item:hover {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .university-item:last-child {
+      border-bottom: none !important;
+    }
+
+    .card-body {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Remove button styles */
+    .btn-outline-danger {
+      border-color: rgba(220, 53, 69, 0.5);
+      color: #dc3545;
+      background: rgba(220, 53, 69, 0.1);
+    }
+
+    .btn-outline-danger:hover {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      color: white;
+    }
+
+    /* University delete button styles */
+    .university-delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 12px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .university-item:hover .university-delete-btn {
+      opacity: 1;
+    }
+
+    .university-item {
+      position: relative;
+    }
+
+    .position-absolute {
+      z-index: 10;
+    }
+
+    /* College delete button styles */
+    .college-delete-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 12px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .college-delete-btn:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .d-flex.align-items-center:hover .college-delete-btn {
+      opacity: 1;
+    }
+
+    /* Chatbot-style dialog */
+    .requests-dialog {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      transition: right 0.3s ease;
+      z-index: 1050;
+      overflow-y: auto;
+    }
+
+    .requests-dialog.open {
+      right: 0;
+    }
+
+    .requests-dialog-header {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .requests-dialog-body {
+      padding: 20px;
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+    }
+
+    .request-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .request-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .request-header {
+      display: flex;
+      justify-content-between;
+      align-items-center;
+      margin-bottom: 10px;
+    }
+
+    .request-student {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .request-status {
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-pending {
+      background: rgba(255, 193, 7, 0.2);
+      color: #ffc107;
+      border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .request-details {
+      color: #ccc;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .request-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-approve {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-approve:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    }
+
+    .btn-reject {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-reject:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #17a2b8, #138496);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-info:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+    }
+
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1040;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .dialog-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .empty-requests {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6c757d;
+    }
+
+    .empty-requests i {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.85);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .navbar-brand {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .navbar-nav .nav-link {
+      color: #fff !important;
+      font-weight: 500;
+      margin-left: 10px;
+      transition: color 0.3s;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ffc107 !important;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .form-control, .form-select {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 10px;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffc107;
+      color: #fff;
+      box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+
+    .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #ffc107, #ff8c00);
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: transform 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
+    }
+
+    .btn-outline-light:hover {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    .university-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .university-card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .college-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      transition: all 0.3s;
+    }
+
+    .college-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .course-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
+
+    .course-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .stats-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .stats-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #ffc107;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+    }
+
+    .tab-content {
+      min-height: 400px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 20px;
+    }
+
+    /* Mobile responsive header buttons */
+    @media (max-width: 768px) {
+      .header-buttons {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        width: 100%;
+      }
+
+      .header-buttons .btn {
+        width: 100%;
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .header-title {
+        margin-bottom: 1rem;
+      }
+
+      .header-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .header-buttons .btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+      }
+
+      .header-buttons .btn i {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Mobile improvements for main content */
+    @media (max-width: 768px) {
+      .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+
+      .card {
+        margin-bottom: 1rem;
+      }
+
+      .card-body {
+        padding: 1rem;
+      }
+
+      .row {
+        margin: 0;
+      }
+
+      .col-md-3, .col-md-9 {
+        padding: 0.5rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .container {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+      }
+
+      .card-body {
+        padding: 0.75rem;
+      }
+
+      .col-md-3, .col-md-9 {
+        padding: 0.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Back Button -->
+  <div class="container mt-3">
+    <a href="index.html" class="btn btn-outline-light" style="border-radius: 30px; font-weight: 600;">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 header-container">
+      <h2 class="header-title"><i class="bi bi-building"></i> University Management</h2>
+      <div class="d-flex gap-2 header-buttons">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#universityModal">
+          <i class="bi bi-plus"></i> Create University
+        </button>
+        <button class="btn btn-success" onclick="openCollegeModal()">
+          <i class="bi bi-building"></i> Create College
+        </button>
+        <button class="btn btn-warning" onclick="openBulkAssignmentModal()">
+          <i class="bi bi-diagram-3"></i> Bulk Assignment
+        </button>
+        <!-- Playlist Requests Notification -->
+        <button class="btn btn-info position-relative" onclick="toggleRequestsDialog()" id="requestsBtn">
+          <i class="bi bi-chat-dots"></i> Requests
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="requestsBadge" style="display: none;">
+            0
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content with Sidebar -->
+    <div class="row">
+      <!-- Left Sidebar - Universities -->
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="bi bi-building"></i> Universities</h5>
+          </div>
+          <div class="card-body p-0">
+            <div id="universitiesSidebar" style="max-height: 500px; overflow-y: auto;">
+              <div class="text-center p-3">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading universities...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Content - Playlists -->
+      <div class="col-md-9">
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="bi bi-collection-play"></i> Playlists</h5>
+          </div>
+          <div class="card-body">
+            <div id="playlistsContent">
+              <div class="text-center p-4">
+                <i class="bi bi-arrow-left-circle text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 text-muted">Select a University</h5>
+                <p class="text-muted">Choose a university from the left to view its playlists</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- University Modal -->
+  <div class="modal fade" id="universityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="background: rgba(0, 0, 0, 0.9); color: white; border-radius: 20px;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="universityModalTitle">Create University</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="universityForm">
+            <div class="mb-3">
+              <label for="universityName" class="form-label">University Name</label>
+              <input type="text" class="form-control" id="universityName" placeholder="Enter university name" required>
+            </div>
+            <div class="mb-3">
+              <label for="universityDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="universityDescription" rows="3" placeholder="Enter university description"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveUniversity()">Save University</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- College Modal -->
+  <div class="modal fade" id="collegeModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background: rgba(0, 0, 0, 0.9); color: white; border-radius: 20px;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="collegeModalTitle">Create College</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="collegeForm">
+            <div class="mb-3">
+              <label for="collegeUniversitySelect" class="form-label">
+                <i class="bi bi-building"></i> Select University
+              </label>
+              <select class="form-select" id="collegeUniversitySelect" required style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
+                <option value="">Choose a university...</option>
+                <!-- Universities will be loaded here -->
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="collegeName" class="form-label">
+                <i class="bi bi-book"></i> College Name
+              </label>
+              <input type="text" class="form-control" id="collegeName" placeholder="Enter college name" required style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
+            </div>
+            <div class="mb-3">
+              <label for="collegeDescription" class="form-label">
+                <i class="bi bi-text-paragraph"></i> Description
+              </label>
+              <textarea class="form-control" id="collegeDescription" rows="3" placeholder="Enter college description" style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="saveCollege()">
+            <i class="bi bi-check-circle"></i> Create College
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course Assignment Modal -->
+  <div class="modal fade" id="courseModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background: rgba(0, 0, 0, 0.9); color: white; border-radius: 20px;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="courseModalTitle">Assign Course to College</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="courseSelect" class="form-label">Select Course to Assign</label>
+            <select class="form-select" id="courseSelect" style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
+              <option value="">Loading courses...</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <button type="button" class="btn btn-primary" onclick="assignSelectedCourse()">
+              <i class="bi bi-plus-circle"></i> Assign Course
+            </button>
+          </div>
+          <hr style="border-color: rgba(255, 255, 255, 0.3);">
+          <div>
+            <h6>Currently Assigned Courses</h6>
+            <div id="assignedCoursesList" style="max-height: 300px; overflow-y: auto;">
+              <!-- Assigned courses will be loaded here -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Assignment Modal -->
+  <div class="modal fade" id="bulkAssignmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="background: rgba(0, 0, 0, 0.9); color: white; border-radius: 20px;">
+        <div class="modal-header">
+          <h5 class="modal-title">Bulk Assignment</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="bulkUniversitySelect" class="form-label">
+                  <i class="bi bi-building"></i> Select University
+                </label>
+                <select class="form-select" id="bulkUniversitySelect" required style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);" onchange="loadCollegesForBulk()">
+                  <option value="">Choose a university...</option>
+                  <!-- Universities will be loaded here -->
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="bulkCollegeSelect" class="form-label">
+                  <i class="bi bi-building"></i> Select College
+                </label>
+                <select class="form-select" id="bulkCollegeSelect" required style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);" onchange="loadPlaylistsForBulk()">
+                  <option value="">Choose a college...</option>
+                  <!-- Colleges will be loaded here -->
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="bulkPlaylistSelect" class="form-label">
+                  <i class="bi bi-collection-play"></i> Select Playlist
+                </label>
+                <select class="form-select" id="bulkPlaylistSelect" style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
+                  <option value="">Choose a playlist...</option>
+                  <!-- Playlists will be loaded here -->
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary" onclick="addPlaylistToAssignment()">
+                <i class="bi bi-plus-circle"></i> Add Playlist
+              </button>
+            </div>
+            <div class="col-md-6">
+              <h6>Selected Playlists</h6>
+              <div id="selectedPlaylists" style="max-height: 300px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 10px;">
+                <p class="text-muted">No playlists selected</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-warning" onclick="saveBulkAssignment()">
+            <i class="bi bi-check-circle"></i> Assign All
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="text-center">
+      <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status"></div>
+      <p class="mt-3 fw-bold fs-5 text-white">Processing...</p>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API_BASE = 'https://api.hamdan.help/api';
+   // const API_BASE = 'http://localhost:3000/api';
+    const token = localStorage.getItem('token');
+    let universities = [];
+    let colleges = [];
+    let courses = [];
+    let playlists = [];
+    let selectedPlaylists = [];
+    let selectedUniversityId = null;
+    let selectedCollegeId = null;
+
+    // Check authentication
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadUniversitiesSidebar();
+    });
+
+    // Load universities in sidebar
+    async function loadUniversitiesSidebar() {
+      try {
+        const response = await fetch(`${API_BASE}/universities`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        const sidebar = document.getElementById('universitiesSidebar');
+        
+        if (data.success && data.data && data.data.universities) {
+          if (data.data.universities.length === 0) {
+            sidebar.innerHTML = `
+              <div class="text-center p-3">
+                <i class="bi bi-building text-muted" style="font-size: 2rem;"></i>
+                <p class="mt-2 text-muted">No universities found</p>
+                <small class="text-muted">Create your first university to get started</small>
+              </div>
+            `;
+            return;
+          }
+
+          sidebar.innerHTML = '';
+          data.data.universities.forEach(university => {
+            const universityItem = document.createElement('div');
+            universityItem.className = 'university-item p-3 border-bottom';
+            universityItem.style.cursor = 'pointer';
+            universityItem.style.transition = 'background-color 0.2s';
+            universityItem.onclick = () => selectUniversityForPlaylists(university);
+            universityItem.innerHTML = `
+              <div class="d-flex align-items-center">
+                <i class="bi bi-building text-primary me-2"></i>
+                <div class="flex-grow-1">
+                  <h6 class="mb-1">${university.name}</h6>
+                  <small class="text-muted">${university.description || 'No description'}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger university-delete-btn" 
+                        onclick="deleteUniversity('${university.id}', '${university.name}', event)"
+                        title="Delete University">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            `;
+            sidebar.appendChild(universityItem);
+          });
+        } else {
+          sidebar.innerHTML = `
+            <div class="text-center p-3">
+              <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+              <p class="mt-2 text-muted">Error loading universities</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading universities:', error);
+        document.getElementById('universitiesSidebar').innerHTML = `
+          <div class="text-center p-3">
+            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+            <p class="mt-2 text-muted">Error loading universities</p>
+          </div>
+        `;
+      }
+    }
+
+    // Select university and load its playlists
+    async function selectUniversityForPlaylists(university) {
+      // Update active state
+      document.querySelectorAll('.university-item').forEach(item => {
+        item.style.backgroundColor = '';
+        item.classList.remove('selected');
+      });
+      event.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+      event.currentTarget.classList.add('selected');
+      
+      // Store current university data
+      event.currentTarget.dataset.id = university.id;
+      event.currentTarget.dataset.name = university.name;
+      
+      // Load playlists for this university
+      await loadPlaylistsForUniversity(university.id, university.name);
+    }
+
+    // Load playlists for selected university
+    async function loadPlaylistsForUniversity(universityId, universityName) {
+      const playlistsContent = document.getElementById('playlistsContent');
+      playlistsContent.innerHTML = `
+        <div class="text-center p-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2 text-muted">Loading playlists for ${universityName}...</p>
+        </div>
+      `;
+
+      try {
+        // First, get colleges for this university
+        const collegesResponse = await fetch(`${API_BASE}/colleges?universityId=${universityId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const collegesData = await collegesResponse.json();
+
+        if (!collegesData.success || !collegesData.data || !collegesData.data.colleges) {
+          playlistsContent.innerHTML = `
+            <div class="text-center p-4">
+              <i class="bi bi-mortarboard text-muted" style="font-size: 3rem;"></i>
+              <h5 class="mt-3 text-muted">No Colleges Found</h5>
+              <p class="text-muted">This university doesn't have any colleges yet</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Display playlists grouped by college (now fetches assigned playlists for each college)
+        displayPlaylistsByCollege(collegesData.data.colleges, [], universityName);
+
+      } catch (error) {
+        console.error('Error loading playlists:', error);
+        playlistsContent.innerHTML = `
+          <div class="text-center p-4">
+            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+            <h5 class="mt-3 text-muted">Error Loading Playlists</h5>
+            <p class="text-muted">Could not load playlists for ${universityName}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Display playlists grouped by college
+    async function displayPlaylistsByCollege(colleges, playlists, universityName) {
+      const playlistsContent = document.getElementById('playlistsContent');
+      
+      if (colleges.length === 0) {
+        playlistsContent.innerHTML = `
+          <div class="text-center p-4">
+            <i class="bi bi-mortarboard text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3 text-muted">No Colleges Found</h5>
+            <p class="text-muted">This university doesn't have any colleges yet</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <div class="mb-3">
+          <h5><i class="bi bi-building"></i> ${universityName}</h5>
+          <p class="text-muted">Assigned playlists organized by college</p>
+        </div>
+      `;
+
+      // Load assigned playlists for each college
+      for (const college of colleges) {
+        try {
+          const response = await fetch(`${API_BASE}/colleges/${college.id}/playlists`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+
+          html += `
+            <div class="mb-4">
+              <div class="d-flex align-items-center mb-2 position-relative">
+                <i class="bi bi-mortarboard text-primary me-2"></i>
+                <h6 class="mb-0 flex-grow-1">${college.name}</h6>
+                <button class="btn btn-sm btn-outline-danger college-delete-btn" 
+                        onclick="deleteCollege('${college.id}', '${college.name}', event)"
+                        title="Delete College">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              <div class="row">
+          `;
+
+          if (data.success && data.data && data.data.playlists && data.data.playlists.length > 0) {
+            // Show assigned playlists for this college
+            data.data.playlists.forEach(assignment => {
+              const playlist = assignment.playlist;
+              html += `
+                <div class="col-md-6 col-lg-4 mb-3">
+                  <div class="card h-100 position-relative">
+                    <div class="card-body">
+                      <h6 class="card-title">${playlist.title}</h6>
+                      <button class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2" 
+                              onclick="removePlaylistFromCollege('${college.id}', '${playlist._id}', '${playlist.title}')"
+                              title="Remove playlist from college">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            // No assigned playlists for this college
+            html += `
+              <div class="col-12">
+                <div class="text-center p-3 border rounded" style="border-color: rgba(255, 255, 255, 0.2) !important;">
+                  <i class="bi bi-collection-play text-muted"></i>
+                  <p class="text-muted mb-0">No playlists assigned to this college</p>
+                </div>
+              </div>
+            `;
+          }
+
+          html += `
+              </div>
+            </div>
+          `;
+        } catch (error) {
+          console.error(`Error loading playlists for college ${college.name}:`, error);
+          html += `
+            <div class="mb-4">
+              <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-mortarboard text-primary me-2"></i>
+                <h6 class="mb-0">${college.name}</h6>
+              </div>
+              <div class="text-center p-3 border rounded" style="border-color: rgba(255, 255, 255, 0.2) !important;">
+                <i class="bi bi-exclamation-triangle text-warning"></i>
+                <p class="text-muted mb-0">Error loading playlists for this college</p>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      playlistsContent.innerHTML = html;
+    }
+
+    // Remove playlist from college
+    async function removePlaylistFromCollege(collegeId, playlistId, playlistTitle) {
+      if (!confirm(`Are you sure you want to remove "${playlistTitle}" from this college?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/colleges/${collegeId}/playlists/${playlistId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showToast(`"${playlistTitle}" removed from college successfully`, 'success');
+          // Refresh the current university's playlists
+          const currentUniversity = document.querySelector('.university-item.selected');
+          if (currentUniversity) {
+            const universityId = currentUniversity.dataset.id;
+            const universityName = currentUniversity.dataset.name;
+            await loadPlaylistsForUniversity(universityId, universityName);
+          }
+        } else {
+          showToast(data.message || 'Error removing playlist from college', 'danger');
+        }
+      } catch (error) {
+        console.error('Error removing playlist from college:', error);
+        showToast('Error removing playlist from college', 'danger');
+      }
+    }
+
+
+
+
+
+
+    // Open college modal
+    function openCollegeModal(universityId = null) {
+      document.getElementById('collegeModalTitle').textContent = 'Create College';
+      document.getElementById('collegeForm').reset();
+      
+      // Show modal first
+      const modal = new bootstrap.Modal(document.getElementById('collegeModal'));
+      modal.show();
+      
+      // Load universities after modal is shown
+      loadUniversityDropdown(universityId);
+    }
+
+    // Load universities into dropdown
+    async function loadUniversityDropdown(preSelectedId = null) {
+      const universitySelect = document.getElementById('collegeUniversitySelect');
+      universitySelect.innerHTML = '<option value="">Loading universities...</option>';
+      
+      try {
+        const response = await fetch(`${API_BASE}/universities`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        universitySelect.innerHTML = '<option value="">Choose a university...</option>';
+        
+        if (data.success && data.data && data.data.universities) {
+          data.data.universities.forEach(university => {
+            const option = document.createElement('option');
+            option.value = university.id;
+            option.textContent = university.name;
+            if (preSelectedId && university.id === preSelectedId) {
+              option.selected = true;
+            }
+            universitySelect.appendChild(option);
+          });
+        } else {
+          universitySelect.innerHTML += '<option value="" disabled>No universities available</option>';
+        }
+      } catch (error) {
+        console.error('Error loading universities:', error);
+        universitySelect.innerHTML = '<option value="" disabled>Error loading universities</option>';
+      }
+    }
+
+    // Save college
+    async function saveCollege() {
+      const formData = {
+        name: document.getElementById('collegeName').value,
+        description: document.getElementById('collegeDescription').value,
+        universityId: document.getElementById('collegeUniversitySelect').value
+      };
+
+      if (!formData.name) {
+        showToast('College name is required', 'warning');
+        return;
+      }
+
+      if (!formData.universityId) {
+        showToast('Please select a university', 'warning');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/colleges`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('College created successfully', 'success');
+          bootstrap.Modal.getInstance(document.getElementById('collegeModal')).hide();
+        } else {
+          showToast(data.message || 'Error creating college', 'danger');
+        }
+      } catch (error) {
+        console.error('Error creating college:', error);
+        showToast('Error creating college', 'danger');
+      }
+    }
+
+    // Save university
+    async function saveUniversity() {
+      const formData = {
+        name: document.getElementById('universityName').value,
+        description: document.getElementById('universityDescription').value
+      };
+
+      if (!formData.name) {
+        showToast('University name is required', 'warning');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/universities`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('University created successfully', 'success');
+          bootstrap.Modal.getInstance(document.getElementById('universityModal')).hide();
+          // Reload universities sidebar
+          loadUniversitiesSidebar();
+        } else {
+          showToast(data.message || 'Error creating university', 'danger');
+        }
+      } catch (error) {
+        console.error('Error creating university:', error);
+        showToast('Error creating university', 'danger');
+      }
+    }
+
+    // Delete university
+    async function deleteUniversity(universityId, universityName, event) {
+      // Prevent the university selection from triggering
+      event.stopPropagation();
+      
+      // Show confirmation dialog
+      if (!confirm(`Are you sure you want to delete "${universityName}"?\n\nThis will also delete all colleges and their associated data under this university.\n\nThis action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/universities/${universityId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(`"${universityName}" deleted successfully`, 'success');
+          // Reload universities sidebar
+          loadUniversitiesSidebar();
+          // Clear the playlists content if the deleted university was selected
+          document.getElementById('playlistsContent').innerHTML = `
+            <div class="text-center p-4">
+              <i class="bi bi-arrow-left-circle text-muted" style="font-size: 3rem;"></i>
+              <h5 class="mt-3 text-muted">Select a University</h5>
+              <p class="text-muted">Choose a university from the left to view its playlists</p>
+            </div>
+          `;
+        } else {
+          showToast(data.message || 'Error deleting university', 'danger');
+        }
+      } catch (error) {
+        console.error('Error deleting university:', error);
+        showToast('Error deleting university', 'danger');
+      }
+    }
+
+    // Delete college
+    async function deleteCollege(collegeId, collegeName, event) {
+      // Prevent any parent click events
+      event.stopPropagation();
+      
+      // Show confirmation dialog
+      if (!confirm(`Are you sure you want to delete "${collegeName}"?\n\nThis will also delete all associated data under this college.\n\nThis action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/colleges/${collegeId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(`"${collegeName}" deleted successfully`, 'success');
+          // Refresh the current university's playlists to show updated colleges
+          const currentUniversity = document.querySelector('.university-item.selected');
+          if (currentUniversity) {
+            const universityId = currentUniversity.dataset.id;
+            const universityName = currentUniversity.dataset.name;
+            await loadPlaylistsForUniversity(universityId, universityName);
+          }
+        } else {
+          showToast(data.message || 'Error deleting college', 'danger');
+        }
+      } catch (error) {
+        console.error('Error deleting college:', error);
+        showToast('Error deleting college', 'danger');
+      }
+    }
+
+
+
+
+
+
+
+
+
+    // Utility functions
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toastId = `toast-${Date.now()}`;
+      const toastEl = document.createElement('div');
+
+      toastEl.className = `toast align-items-center text-white bg-${type} border-0 show`;
+      toastEl.id = toastId;
+      toastEl.setAttribute('role', 'alert');
+      toastEl.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+
+      toastContainer.appendChild(toastEl);
+      setTimeout(() => {
+        toastEl.remove();
+      }, 4000);
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    // Bulk Assignment Functions
+    async function openBulkAssignmentModal() {
+      selectedPlaylists = [];
+      document.getElementById('bulkAssignmentModal').querySelector('form')?.reset();
+      updateSelectedPlaylistsDisplay();
+      new bootstrap.Modal(document.getElementById('bulkAssignmentModal')).show();
+      
+      // Load universities after modal opens
+      await loadUniversitiesForBulk();
+    }
+
+    async function loadUniversitiesForBulk() {
+      const universitySelect = document.getElementById('bulkUniversitySelect');
+      universitySelect.innerHTML = '<option value="">Loading universities...</option>';
+      
+      try {
+        const response = await fetch(`${API_BASE}/universities`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        universitySelect.innerHTML = '<option value="">Choose a university...</option>';
+        
+        if (data.success && data.data && data.data.universities) {
+          data.data.universities.forEach(university => {
+            const option = document.createElement('option');
+            option.value = university.id;
+            option.textContent = university.name;
+            universitySelect.appendChild(option);
+          });
+        } else {
+          universitySelect.innerHTML = '<option value="" disabled>No universities available</option>';
+        }
+      } catch (error) {
+        console.error('Error loading universities:', error);
+        universitySelect.innerHTML = '<option value="">Error loading universities</option>';
+      }
+    }
+
+    async function loadCollegesForBulk() {
+      const universitySelect = document.getElementById('bulkUniversitySelect');
+      const universityId = universitySelect.value;
+      
+      const collegeSelect = document.getElementById('bulkCollegeSelect');
+      collegeSelect.innerHTML = '<option value="">Loading colleges...</option>';
+      
+      if (!universityId) {
+        collegeSelect.innerHTML = '<option value="" disabled>Please select a university first</option>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/colleges?universityId=${universityId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        console.log('Colleges API response:', data); // Debug log
+        
+        collegeSelect.innerHTML = '<option value="">Choose a college...</option>';
+        
+        if (data.success && data.data) {
+          // Check if data.data is an array
+          const colleges = Array.isArray(data.data) ? data.data : (data.data.colleges || []);
+          if (colleges.length > 0) {
+            colleges.forEach(college => {
+              const option = document.createElement('option');
+              option.value = college.id;
+              option.textContent = college.name;
+              collegeSelect.appendChild(option);
+            });
+          } else {
+            collegeSelect.innerHTML = '<option value="" disabled>No colleges found for this university</option>';
+          }
+        } else {
+          collegeSelect.innerHTML = '<option value="" disabled>No colleges found for this university</option>';
+        }
+      } catch (error) {
+        console.error('Error loading colleges:', error);
+        collegeSelect.innerHTML = '<option value="">Error loading colleges</option>';
+      }
+    }
+
+    async function loadPlaylistsForBulk() {
+      const collegeSelect = document.getElementById('bulkCollegeSelect');
+      const collegeId = collegeSelect.value;
+      
+      const playlistSelect = document.getElementById('bulkPlaylistSelect');
+      playlistSelect.innerHTML = '<option value="">Loading playlists...</option>';
+      
+      if (!collegeId) {
+        playlistSelect.innerHTML = '<option value="" disabled>Please select a college first</option>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/playlists`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        playlistSelect.innerHTML = '<option value="">Choose a playlist...</option>';
+        
+        if (data.success && data.data) {
+          playlists = data.data;
+          data.data.forEach(playlist => {
+            const option = document.createElement('option');
+            option.value = playlist.id;
+            option.textContent = playlist.title;
+            playlistSelect.appendChild(option);
+          });
+        } else {
+          playlistSelect.innerHTML = '<option value="" disabled>No playlists available</option>';
+        }
+      } catch (error) {
+        console.error('Error loading playlists:', error);
+        playlistSelect.innerHTML = '<option value="">Error loading playlists</option>';
+      }
+    }
+
+    function addPlaylistToAssignment() {
+      const playlistSelect = document.getElementById('bulkPlaylistSelect');
+      const playlistId = playlistSelect.value;
+      
+      if (!playlistId) {
+        showToast('Please select a playlist', 'warning');
+        return;
+      }
+
+      const playlist = playlists.find(p => p.id === playlistId);
+      if (!playlist) {
+        showToast('Playlist not found', 'error');
+        return;
+      }
+
+      // Check if already selected
+      if (selectedPlaylists.find(p => p.id === playlistId)) {
+        showToast('Playlist already selected', 'warning');
+        return;
+      }
+
+      selectedPlaylists.push(playlist);
+      playlistSelect.value = '';
+      updateSelectedPlaylistsDisplay();
+    }
+
+    function updateSelectedPlaylistsDisplay() {
+      const container = document.getElementById('selectedPlaylists');
+      
+      if (selectedPlaylists.length === 0) {
+        container.innerHTML = '<p class="text-muted">No playlists selected</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      selectedPlaylists.forEach((playlist, index) => {
+        const playlistItem = document.createElement('div');
+        playlistItem.className = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded';
+        playlistItem.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        playlistItem.innerHTML = `
+          <div>
+            <h6 class="mb-1">${playlist.title}</h6>
+            <small class="text-muted">${playlist.description || 'No description'}</small>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="removePlaylistFromAssignment(${index})">
+            <i class="bi bi-x"></i>
+          </button>
+        `;
+        container.appendChild(playlistItem);
+      });
+    }
+
+    function removePlaylistFromAssignment(index) {
+      selectedPlaylists.splice(index, 1);
+      updateSelectedPlaylistsDisplay();
+    }
+
+    async function saveBulkAssignment() {
+      const universitySelect = document.getElementById('bulkUniversitySelect');
+      const collegeSelect = document.getElementById('bulkCollegeSelect');
+      const universityId = universitySelect.value;
+      const collegeId = collegeSelect.value;
+      
+      if (!universityId) {
+        showToast('Please select a university', 'warning');
+        return;
+      }
+
+      if (!collegeId) {
+        showToast('Please select a college', 'warning');
+        return;
+      }
+
+      if (selectedPlaylists.length === 0) {
+        showToast('Please select at least one playlist', 'warning');
+        return;
+      }
+
+      try {
+        const playlistIds = selectedPlaylists.map(p => p.id);
+        
+        const response = await fetch(`${API_BASE}/colleges/${collegeId}/playlists`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            playlistIds,
+            universityId: universityId
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          const universityName = universitySelect.options[universitySelect.selectedIndex].text;
+          const collegeName = collegeSelect.options[collegeSelect.selectedIndex].text;
+          showToast(`Successfully assigned ${selectedPlaylists.length} playlists to ${collegeName} in ${universityName}`, 'success');
+          bootstrap.Modal.getInstance(document.getElementById('bulkAssignmentModal')).hide();
+          selectedPlaylists = [];
+          updateSelectedPlaylistsDisplay();
+        } else {
+          showToast(data.message || 'Error assigning playlists', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving bulk assignment:', error);
+        showToast('Error saving bulk assignment', 'error');
+      }
+    }
+
+    // Playlist Requests Dialog Functions
+    function toggleRequestsDialog() {
+      const dialog = document.getElementById('requestsDialog');
+      const overlay = document.getElementById('dialogOverlay');
+      
+      if (dialog.classList.contains('open')) {
+        closeRequestsDialog();
+      } else {
+        openRequestsDialog();
+      }
+    }
+
+    function openRequestsDialog() {
+      const dialog = document.getElementById('requestsDialog');
+      const overlay = document.getElementById('dialogOverlay');
+      
+      dialog.classList.add('open');
+      overlay.classList.add('show');
+      
+      // Load requests when dialog opens
+      loadPlaylistRequests();
+    }
+
+    function closeRequestsDialog() {
+      const dialog = document.getElementById('requestsDialog');
+      const overlay = document.getElementById('dialogOverlay');
+      
+      dialog.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+
+    // Load playlist requests
+    async function loadPlaylistRequests() {
+      try {
+        const response = await fetch(`${API_BASE}/playlist-requests/admin`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        const dialogBody = document.getElementById('requestsDialogBody');
+        
+        // Add debug logging
+        console.log('Playlist requests API response:', data);
+        
+        if (data.success && data.data && data.data.requests) {
+          // Filter out any malformed requests and only show pending requests
+          const validRequests = data.data.requests.filter(request => {
+            if (!request || !request.id) {
+              console.warn('Invalid request found:', request);
+              return false;
+            }
+            // Only show pending requests, filter out accepted/rejected ones
+            return request.status === 'pending';
+          });
+          
+          if (validRequests.length === 0) {
+            dialogBody.innerHTML = `
+              <div class="empty-requests">
+                <i class="bi bi-chat-dots"></i>
+                <h5>No Requests</h5>
+                <p>No playlist requests at the moment</p>
+              </div>
+            `;
+          } else {
+            dialogBody.innerHTML = validRequests.map(request => `
+              <div class="request-item" data-request-id="${request.id}">
+                <div class="request-header">
+                  <div class="request-student">${request.student?.name || 'Unknown Student'}</div>
+                  <span class="request-status status-${request.status}">${request.statusText || request.status}</span>
+                </div>
+                <div class="request-details">
+                  <div><strong>Playlist:</strong> ${request.playlist?.title || 'Unknown Playlist'}</div>
+                  <div><strong>University:</strong> ${request.university?.name || 'Unknown University'}</div>
+                  <div><strong>College:</strong> ${request.college?.name || 'Unknown College'}</div>
+                  <div><strong>Requested:</strong> ${request.requestedAt || 'Unknown Date'}</div>
+                </div>
+                ${request.status === 'pending' ? `
+                  <div class="request-actions">
+                    <button class="btn-approve" onclick="approveRequest('${request.id}')">
+                      <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                    <button class="btn-reject" onclick="rejectRequest('${request.id}')">
+                      <i class="bi bi-x-circle"></i> Reject
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="messageStudent('${request.student?.id}', '${request.student?.name}', '${request.student?.email}')" title="Send message to this student">
+                      <i class="bi bi-envelope"></i> Message
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+            `).join('');
+          }
+          
+          // Update badge count with pending requests only
+          updateRequestsBadge(validRequests.length);
+        } else {
+          dialogBody.innerHTML = `
+            <div class="empty-requests">
+              <i class="bi bi-exclamation-triangle"></i>
+              <h5>Error Loading Requests</h5>
+              <p>Could not load playlist requests</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading playlist requests:', error);
+        document.getElementById('requestsDialogBody').innerHTML = `
+          <div class="empty-requests">
+            <i class="bi bi-exclamation-triangle"></i>
+            <h5>Error Loading Requests</h5>
+            <p>Could not load playlist requests</p>
+          </div>
+        `;
+      }
+    }
+
+    // Update requests badge
+    function updateRequestsBadge(count) {
+      const badge = document.getElementById('requestsBadge');
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Approve request
+    async function approveRequest(requestId) {
+      if (!confirm('Are you sure you want to approve this request?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/playlist-requests/admin/${requestId}/approve`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showToast('Request approved successfully!', 'success');
+          
+          // Remove the request from UI dynamically
+          const requestElement = document.querySelector(`[data-request-id="${requestId}"]`);
+          if (requestElement) {
+            // Add fade out animation
+            requestElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            requestElement.style.opacity = '0';
+            requestElement.style.transform = 'translateX(100%)';
+            
+            // Remove element after animation
+            setTimeout(() => {
+              requestElement.remove();
+              
+              // Check if no requests left and show empty state
+              const remainingRequests = document.querySelectorAll('.request-item');
+              if (remainingRequests.length === 0) {
+                document.getElementById('requestsDialogBody').innerHTML = `
+                  <div class="empty-requests">
+                    <i class="bi bi-chat-dots"></i>
+                    <h5>No Requests</h5>
+                    <p>No playlist requests at the moment</p>
+                  </div>
+                `;
+              }
+            }, 300);
+          }
+          
+          // Update badge count
+          updateRequestsBadge(Math.max(0, parseInt(document.getElementById('requestsBadge').textContent || '0') - 1));
+        } else {
+          showToast(data.message || 'Error approving request', 'error');
+        }
+      } catch (error) {
+        console.error('Error approving request:', error);
+        showToast('Error approving request', 'error');
+      }
+    }
+
+    // Reject request
+    async function rejectRequest(requestId) {
+      if (!confirm('Are you sure you want to reject this request?')) {
+        return; // User cancelled
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/playlist-requests/admin/${requestId}/reject`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ rejectionReason: 'Request rejected by admin' })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          showToast('Request rejected successfully!', 'success');
+          
+          // Remove the request from UI dynamically
+          const requestElement = document.querySelector(`[data-request-id="${requestId}"]`);
+          if (requestElement) {
+            // Add fade out animation
+            requestElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            requestElement.style.opacity = '0';
+            requestElement.style.transform = 'translateX(100%)';
+            
+            // Remove element after animation
+            setTimeout(() => {
+              requestElement.remove();
+              
+              // Check if no requests left and show empty state
+              const remainingRequests = document.querySelectorAll('.request-item');
+              if (remainingRequests.length === 0) {
+                document.getElementById('requestsDialogBody').innerHTML = `
+                  <div class="empty-requests">
+                    <i class="bi bi-chat-dots"></i>
+                    <h5>No Requests</h5>
+                    <p>No playlist requests at the moment</p>
+                  </div>
+                `;
+              }
+            }, 300);
+          }
+          
+          // Update badge count
+          updateRequestsBadge(Math.max(0, parseInt(document.getElementById('requestsBadge').textContent || '0') - 1));
+        } else {
+          showToast(data.message || 'Error rejecting request', 'error');
+        }
+      } catch (error) {
+        console.error('Error rejecting request:', error);
+        showToast('Error rejecting request', 'error');
+      }
+    }
+
+    // Message student function
+    function messageStudent(studentId, studentName, studentEmail) {
+      if (!studentId) {
+        showToast('Student information not available', 'warning');
+        return;
+      }
+      
+      console.log('Message student clicked:', { studentId, studentName, studentEmail });
+      
+      // Navigate to messages page with student pre-selected
+      const messagesUrl = `messages.html?studentId=${encodeURIComponent(studentId)}&studentName=${encodeURIComponent(studentName || 'Unknown')}&studentEmail=${encodeURIComponent(studentEmail || '')}`;
+      console.log('Generated URL:', messagesUrl);
+      
+      // Try opening in same window first, then fallback to new window
+      try {
+        window.location.href = messagesUrl;
+      } catch (error) {
+        console.error('Error navigating to messages:', error);
+        window.open(messagesUrl, '_blank');
+      }
+    }
+
+    // Load requests count on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadRequestsCount();
+    });
+
+    // Load requests count
+    async function loadRequestsCount() {
+      try {
+        const response = await fetch(`${API_BASE}/playlist-requests/admin/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Only show count for pending requests
+          updateRequestsBadge(data.data.pending || 0);
+        }
+      } catch (error) {
+        console.error('Error loading requests count:', error);
+      }
+    }
+  </script>
+
+  <!-- Playlist Requests Dialog (Chatbot-style) -->
+  <div class="dialog-overlay" id="dialogOverlay" onclick="closeRequestsDialog()"></div>
+  <div class="requests-dialog" id="requestsDialog">
+    <div class="requests-dialog-header">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-chat-dots me-2"></i>Playlist Requests
+        </h5>
+        <button class="btn btn-sm btn-outline-light" onclick="closeRequestsDialog()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <p class="mb-0 mt-2 text-light opacity-75">Manage student playlist requests</p>
+    </div>
+    <div class="requests-dialog-body" id="requestsDialogBody">
+      <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading requests...</p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

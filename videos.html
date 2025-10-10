@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mux Videos with Playlist Assignment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="images/logo.png" type="image/png">
+  <link rel="shortcut icon" href="images/logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://unpkg.com/@mux/mux-player"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      min-height: 100vh;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      padding-bottom: 100px;
+    }
+
+    .navbar {
+      background-color: #343a40;
+    }
+
+    .navbar-nav .nav-link {
+      color: #fff !important;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ffc107 !important;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .video-card {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      height: 100%;
+    }
+
+    video {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 6px;
+    }
+
+    select,
+    button,
+    input[type="text"],
+    input[type="file"] {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    label {
+      margin-top: 10px;
+      display: block;
+      font-weight: 500;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    .no-videos-card {
+      max-width: 600px;
+      margin: 80px auto;
+      padding: 40px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .no-videos-card i {
+      font-size: 48px;
+      color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container mt-3">
+    <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <div class="container">
+    <h1 class="text-center my-4">Incoming Videos from Mux</h1>
+    <div id="videoList"></div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+  <!-- Loading Spinner -->
+  <div class="loading-overlay" id="loadingOverlay" style="display: flex;">
+    <div class="text-center">
+      <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status"></div>
+      <p class="mt-3 fw-bold fs-5 text-secondary">Loading videos, please wait...</p>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Define API base URL - make sure this matches your backend
+  const API_BASE = 'https://api.hamdan.help/api';
+   // const API_BASE = 'http://localhost:3000/api';
+    console.log('API Base URL:', API_BASE);
+
+    // Get authentication token
+    const token = localStorage.getItem('token');
+    console.log('Auth token exists:', !!token);
+
+    if (!token) {
+      showToast('You are not authenticated. Please login first.', 'danger');
+      // REMOVED: window.location.href = '/login.html';
+      console.warn('No authentication token found');
+    }
+
+    let playlists = [];
+
+    const fetchPlaylists = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/playlists`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          playlists = data.data;
+        } else {
+          throw new Error('Failed to fetch playlists');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Error loading playlists', 'danger');
+      }
+    };
+
+    const fetchMuxVideos = async () => {
+      try {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        console.log('Fetching videos from Mux...');
+        const res = await fetch(`${API_BASE}/videos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const contentType = res.headers.get('content-type');
+        if (!res.ok || !contentType.includes('application/json')) {
+          const text = await res.text();
+          throw new Error(`Unexpected response:\n${text}`);
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          displayVideos(data.data);
+        } else {
+          throw new Error(data.message || 'Unknown error from server');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to load videos: ' + err.message, 'danger');
+
+        // Show error in UI
+        const videoList = document.getElementById('videoList');
+        videoList.innerHTML = `
+          <div class="alert alert-danger">
+            <h4>❌ Failed to Load Videos</h4>
+            <p><strong>Error:</strong> ${err.message}</p>
+            <p>Please check the browser console for more details.</p>
+          </div>
+        `;
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    };
+
+    const displayVideos = (videos) => {
+      console.log('Displaying videos:', videos.length);
+
+      const videoList = document.getElementById('videoList');
+      videoList.innerHTML = '<div class="row" id="videoRow"></div>';
+      const videoRow = document.getElementById('videoRow');
+
+      if (videos.length === 0) {
+        videoList.innerHTML = `
+          <div class="no-videos-card">
+            <i class="bi bi-camera-video-off"></i>
+            <h3 class="mt-3">No Videos Found</h3>
+            <p class="text-warning">There are currently no videos available from Mux. Please upload some or check back later.</p>
+          </div>
+        `;
+        return;
+      }
+
+      videos.forEach(async video => {
+        const playbackId = video.playback_ids?.[0]?.id;
+        const playbackPolicy = video.playback_ids?.[0]?.policy || '';
+        if (!playbackId) return;
+
+        const videoCard = document.createElement('div');
+        videoCard.className = 'col-md-4 d-flex mb-4';
+        const videoId = `video-${video.id}`;
+        const selectId = `select-${video.id}`;
+        const btnId = `btn-${video.id}`;
+        const descId = `desc-${video.id}`;
+
+        // Get video title from various possible sources
+        const videoTitle = video.meta?.title || video.title || video.filename || `Video ${video.id}` || 'Untitled Video';
+        const videoDescription = video.meta?.description || video.description || '';
+        const createdDate = video.created_at ? new Date(Number(video.created_at) * 1000).toLocaleDateString() : 'Unknown';
+
+        videoCard.innerHTML = `
+          <div class="video-card w-100">
+            <h5>${videoTitle}</h5>
+            <div id="mux-player-container-${video.id}"></div>
+
+            <label for="${descId}">Description:</label>
+            <input type="text" id="${descId}" value="${videoDescription}" placeholder="Enter video description" />
+
+            <div class="social-media-links">
+              <h6 class="mt-3">Social Media Links</h6>
+              <div id="links-${video.id}"></div>
+              <button class="btn btn-sm btn-outline-primary mt-2" onclick="addSocialLink('${video.id}')">
+                <i class="bi bi-plus-circle"></i> Add Link
+              </button>
+            </div>
+
+            <label for="${selectId}">Assign to Playlist:</label>
+            <select id="${selectId}">
+              <option value="">Select playlist</option>
+              ${playlists.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}
+            </select>
+            <button id="${btnId}" class="btn btn-warning mt-2">Assign Video</button>
+
+            <small class="text-light d-block mt-2">Uploaded: ${createdDate}</small>
+          </div>
+        `;
+
+        videoRow.appendChild(videoCard);
+
+        // Fetch all required tokens in parallel
+        const tokenEndpoints = [
+          { attr: 'playback-token', url: `${API_BASE}/mux/playback-token?playbackId=${playbackId}` },
+          { attr: 'drm-token', url: `${API_BASE}/mux/drm-token?playbackId=${playbackId}` },
+          { attr: 'thumbnail-token', url: `${API_BASE}/mux/thumbnail-token?playbackId=${playbackId}` },
+          { attr: 'storyboard-token', url: `${API_BASE}/mux/storyboard-token?playbackId=${playbackId}` },
+        ];
+
+        const headers = { Authorization: `Bearer ${token}` };
+        const tokenFetches = tokenEndpoints.map(e => fetch(e.url, { headers }).then(r => r.json()));
+        const tokens = await Promise.all(tokenFetches);
+
+        // Create mux-player element
+        const muxPlayer = document.createElement('mux-player');
+        muxPlayer.setAttribute('playback-id', playbackId);
+        muxPlayer.setAttribute('style', 'width: 100%; aspect-ratio: 16/9; background: #000;');
+        // Set tokens based on playback policy
+        if (playbackPolicy === 'drm') {
+          // DRM only: set both playback-token and drm-token
+          if (tokens[0].success && tokens[0].token) {
+            muxPlayer.setAttribute('playback-token', tokens[0].token);
+          }
+          if (tokens[1].success && tokens[1].token) {
+            muxPlayer.setAttribute('drm-token', tokens[1].token);
+          }
+        } else if (playbackPolicy === 'signed') {
+          // Signed only: set only playback-token
+          if (tokens[0].success && tokens[0].token) {
+            muxPlayer.setAttribute('playback-token', tokens[0].token);
+          }
+        } else if (playbackPolicy === 'public') {
+          // No token needed
+        } else if (Array.isArray(video.playback_ids) && video.playback_ids[0]?.policy && video.playback_ids.length > 1) {
+          // If both policies exist, set both
+          if (tokens[0].success && tokens[0].token) {
+            muxPlayer.setAttribute('playback-token', tokens[0].token);
+          }
+          if (tokens[1].success && tokens[1].token) {
+            muxPlayer.setAttribute('drm-token', tokens[1].token);
+          }
+        }
+        // Always set thumbnail and storyboard tokens if available
+        if (tokens[2].success && tokens[2].token) {
+          muxPlayer.setAttribute('thumbnail-token', tokens[2].token);
+        }
+        if (tokens[3].success && tokens[3].token) {
+          muxPlayer.setAttribute('storyboard-token', tokens[3].token);
+        }
+        // Optionally set poster/thumbnail
+        muxPlayer.setAttribute('metadata-title', videoTitle);
+        muxPlayer.setAttribute('metadata-description', videoDescription);
+
+        // Insert mux-player into the container
+        const container = document.getElementById(`mux-player-container-${video.id}`);
+        if (container) {
+          container.appendChild(muxPlayer);
+        }
+
+        // Initialize social media links
+        const linksContainer = document.getElementById(`links-${video.id}`);
+        linksContainer.innerHTML = `
+          <div class="social-link-template d-none">
+            <div class="input-group mb-2">
+              <select class="form-select" name="platform">
+                <option value="whatsapp">WhatsApp</option>
+                <option value="telegram">Telegram</option>
+                <option value="snapchat">Snapchat</option>
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="twitter">Twitter</option>
+                <option value="tiktok">TikTok</option>
+                <option value="other">Other</option>
+              </select>
+              <input type="text" class="form-control" name="url" placeholder="Enter URL">
+              <input type="text" class="form-control" name="label" placeholder="Optional label">
+              <button class="btn btn-danger" type="button" onclick="removeSocialLink(this)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById(btnId).addEventListener('click', function(event) {
+          // Prevent any default actions and stop event propagation
+          event.preventDefault();
+          event.stopPropagation();
+
+          console.log('Assign Video button clicked for video ID:', video.id);
+
+          const playlistId = document.getElementById(selectId).value;
+          const description = document.getElementById(descId).value.trim();
+
+          if (!playlistId) {
+            showToast('⚠️ Please select a playlist first.', 'warning');
+            return;
+          }
+
+          // Collect social media links
+          const links = [];
+          const linkInputs = linksContainer.querySelectorAll('.input-group:not(.d-none)');
+          linkInputs.forEach(link => {
+            const platform = link.querySelector('select').value;
+            const url = link.querySelector('[name="url"]').value;
+            const label = link.querySelector('[name="label"]').value;
+
+            if (platform && url) {
+              links.push({
+                platform,
+                url,
+                label: label || null
+              });
+            }
+          });
+
+          // Get video duration from the mux-player element if loaded
+          const muxPlayerElement = document.querySelector(`#mux-player-container-${video.id} mux-player`);
+          const videoDuration = muxPlayerElement && muxPlayerElement.duration ? muxPlayerElement.duration : 0;
+
+          console.log('Creating course with video:', {
+            videoId: video.id,
+            playlistId,
+            playbackId,
+            description,
+            links,
+            videoDuration
+          });
+
+          // Pass the entire video object, not just the ID
+          createCourseFromVideo(video, playlistId, playbackId, description, null, links, videoDuration);
+        });
+      });
+    };
+
+    const addSocialLink = (videoId) => {
+      const linksContainer = document.getElementById(`links-${videoId}`);
+      const template = linksContainer.querySelector('.social-link-template');
+      if (template) {
+        const newLink = template.cloneNode(true);
+        newLink.classList.remove('d-none');
+        newLink.classList.remove('social-link-template');
+        linksContainer.appendChild(newLink);
+      } else {
+        console.error('Social link template not found');
+      }
+    };
+
+   async function createCourseFromVideo(video, playlistId, playbackId, description, thumbnailFile, socialMediaLinks, videoDuration = 0) {
+     // Immediately disable the button to prevent double-clicks
+     const btnId = `btn-${video.id}`;
+     const button = document.getElementById(btnId);
+     if (button) {
+       button.disabled = true;
+       button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+     }
+
+     // Show loading indicator (commented out since loadingOverlay is not available)
+     // document.getElementById('loadingOverlay').style.display = 'flex';
+
+     // Log the start of the process with timestamp
+     console.log(`[${new Date().toISOString()}] Starting course creation for video:`, video.id);
+
+     try {
+       // Create FormData object to match backend expectations exactly
+       const formData = new FormData();
+
+       // Get video title from various possible sources
+       const videoTitle = video.meta?.title || video.title || video.filename || `Video ${video.id}` || 'Untitled Video';
+       
+       // Required fields that backend expects
+       formData.append('title', videoTitle);
+       formData.append('description', description || "No description provided");
+       formData.append('name', videoTitle);
+       formData.append('titleFile', videoTitle);
+       formData.append('video', `https://stream.mux.com/${playbackId}.m3u8`);
+       formData.append('duration', video.duration || videoDuration || 0);
+       formData.append('playlistId', playlistId);
+       formData.append('isLocked', 'true');
+
+       // Fields array - must be a valid JSON string array
+       const emptyFields = [];
+       formData.append('fields', JSON.stringify(emptyFields));
+
+       // Social media links - must be a valid JSON string array
+       formData.append('socialMedia', JSON.stringify(socialMediaLinks || []));
+
+       // Remove thumbnail append
+       // formData.append('thumbnail', null);
+
+       console.log('FormData contents:');
+       for (let [key, value] of formData.entries()) {
+         console.log(key, ':', typeof value === 'object' ? '[File]' : value);
+       }
+
+       // Log the API endpoint we're calling
+       console.log('Calling API endpoint:', `${API_BASE}/createCourse`);
+
+       // Send to backend - make sure this matches your actual API endpoint
+       let response;
+       try {
+         response = await fetch(`${API_BASE}/createCourse`, {
+           method: "POST",
+           headers: {
+             Authorization: `Bearer ${token}`
+             // Don't set Content-Type for FormData - browser will set it with boundary
+           },
+           body: formData
+         });
+
+         console.log('Response status:', response.status, response.statusText);
+       } catch (fetchError) {
+         console.error('Network error during fetch:', fetchError);
+         throw new Error(`Network error: ${fetchError.message}`);
+       }
+
+       // Check if response is OK
+       if (!response.ok) {
+         const errorText = await response.text();
+         console.error('Server error response:', errorText);
+         throw new Error(`Server error: ${response.status} ${response.statusText}`);
+       }
+
+       const data = await response.json();
+
+       if (data.success) {
+         // Remove the video card from the UI (try multiple selectors for robustness)
+         let videoCard = document.getElementById(`video-${video.id}`);
+         if (videoCard) {
+           // Try to find the closest .col-md-4 (Bootstrap grid card)
+           let cardContainer = videoCard.closest('.col-md-4');
+           if (cardContainer) {
+             cardContainer.remove();
+           } else {
+             // Fallback: try to remove the parent .video-card or the parent node
+             let parentCard = videoCard.closest('.video-card');
+             if (parentCard) {
+               parentCard.remove();
+             } else if (videoCard.parentNode) {
+               videoCard.parentNode.removeChild(videoCard);
+             } else {
+               console.warn('Could not find card container to remove for video:', video.id);
+             }
+           }
+         } else {
+           console.warn('Could not find video element to remove for video:', video.id);
+         }
+         showToast(`✅ Course created: ${video.meta?.title || 'New video'}`, 'success');
+         // Reload the page to update the video list
+         setTimeout(() => { window.location.reload(); }, 800);
+
+         // Verify the course was created by fetching it
+         try {
+           const verifyRes = await fetch(`${API_BASE}/courses?playlistId=${playlistId}`, {
+             headers: { Authorization: `Bearer ${token}` }
+           });
+           const verifyData = await verifyRes.json();
+           console.log('Verification response:', verifyData);
+
+           // Show verification results in console
+           if (verifyData.success && verifyData.data && verifyData.data.length > 0) {
+             console.log('✅ Course verified in database:', verifyData.data);
+           } else {
+             console.warn('⚠️ Course not found in verification check');
+           }
+         } catch (verifyErr) {
+           console.warn('Course verification error:', verifyErr);
+         }
+
+         // REMOVED: No automatic page reload or redirects
+       } else {
+         throw new Error(data.message || 'Course creation failed');
+       }
+     } catch (err) {
+       console.error('Error creating course:', err);
+
+       // Create a visible error message in the UI
+       const errorMessage = `
+         <div class="alert alert-danger">
+           <h4>❌ Course Creation Failed</h4>
+           <p><strong>Error:</strong> ${err.message}</p>
+           <p>Please check the browser console for more details.</p>
+           <p>You can try again or contact support if the issue persists.</p>
+         </div>
+       `;
+
+       // Replace the video card with error message
+       const videoCard = document.getElementById(`video-${video.id}`).closest('.col-md-4');
+       if (videoCard) {
+         videoCard.innerHTML = errorMessage;
+       }
+
+       showToast('Failed to create course: ' + err.message, 'danger');
+     } finally {
+       // Hide loading indicator (if any)
+       // Re-enable the button if the video card still exists (not replaced)
+       const btnId = `btn-${video.id}`;
+       const button = document.getElementById(btnId);
+       if (button) {
+         button.disabled = false;
+         button.innerHTML = 'Assign Video';
+       }
+     }
+   }
+
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toastId = `toast-${Date.now()}`;
+      const toastEl = document.createElement('div');
+
+      toastEl.className = `toast align-items-center text-white bg-${type} border-0 show`;
+      toastEl.id = toastId;
+      toastEl.setAttribute('role', 'alert');
+      toastEl.setAttribute('aria-live', 'assertive');
+      toastEl.setAttribute('aria-atomic', 'true');
+      toastEl.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+
+      toastContainer.appendChild(toastEl);
+      setTimeout(() => {
+        toastEl.remove();
+      }, 4000);
+    }
+
+    // Init
+    (async () => {
+      await fetchPlaylists();
+      await fetchMuxVideos();
+    })();
+
+    function logout() {
+      localStorage.clear();
+      // REMOVED: window.location.href = 'login.html';
+      showToast('Logged out successfully', 'info');
+      console.log('User logged out - localStorage cleared');
+    }
+
+    function removeSocialLink(button) {
+      const inputGroup = button.closest('.input-group');
+      if (inputGroup) {
+        inputGroup.remove();
+      }
+    }
+
+  </script>
+
+
+</body>
+</html>
