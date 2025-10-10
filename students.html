@@ -337,6 +337,25 @@
       const studentCountInfo = document.getElementById('studentCountInfo');
       const loadingIndicator = document.getElementById('loadingIndicator');
 
+      // Format watching hours to readable format
+      function formatWatchingHours(hours) {
+        if (!hours || hours === 0) {
+          return '0 hrs';
+        }
+        
+        const totalMinutes = Math.round(hours * 60);
+        const hoursPart = Math.floor(totalMinutes / 60);
+        const minutesPart = totalMinutes % 60;
+        
+        if (hoursPart === 0) {
+          return `${minutesPart} min${minutesPart !== 1 ? 's' : ''}`;
+        } else if (minutesPart === 0) {
+          return `${hoursPart} hr${hoursPart !== 1 ? 's' : ''}`;
+        } else {
+          return `${hoursPart} hr${hoursPart !== 1 ? 's' : ''} ${minutesPart} min${minutesPart !== 1 ? 's' : ''}`;
+        }
+      }
+
       async function loadStudents() {
         try {
           // Show loading indicator
@@ -663,7 +682,7 @@
               <td>${student.email}</td>
               <td>${student.phone || '-'}</td>
               <td>${student.name || '-'}</td>
-              <td>${student.totalWatchingHours || 0} hrs</td>
+              <td>${formatWatchingHours(student.totalWatchingHours || 0)}</td>
               <td>
                 <center>
                   ${student.isBlocked ? 'Yes' : 'No'}
