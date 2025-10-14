@@ -144,6 +144,27 @@
       flex-direction: column;
       gap: 15px;
       align-items: stretch;
+      /* Custom scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    }
+
+    .messages-area::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .messages-area::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
     }
 
     .empty-chat {
@@ -501,6 +522,336 @@
       right: 1rem;
       z-index: 9999;
     }
+
+    /* Message Notification Styles */
+    .message-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 350px;
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    .message-notification-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .message-notification-title {
+      font-weight: 600;
+      color: #dc3545;
+      margin: 0;
+    }
+
+    .message-notification-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .message-notification-content {
+      margin-bottom: 10px;
+    }
+
+    .message-notification-sender {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .message-notification-text {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message-notification-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .message-notification-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .message-notification-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .message-notification-btn.secondary {
+      background: #6c757d;
+    }
+
+    /* Badge styles */
+    .message-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #dc3545;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .chat-header {
+      position: relative;
+    }
+
+    /* Message Notifications Panel */
+    .message-notifications-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 400px;
+      max-height: 500px;
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+      overflow-y: auto;
+    }
+
+    .message-notifications-panel.closing {
+      animation: slideOutRight 0.3s ease-in;
+    }
+
+    .message-notifications-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    .message-notifications-title {
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+
+    .message-notifications-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .message-notification-item {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .message-notification-item:hover {
+      background: #e9ecef;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .message-notification-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .message-notification-item-sender {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .message-notification-item-time {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .message-notification-item-content {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .message-notification-item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .message-notification-item-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .message-notification-item-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .message-notification-item-btn.secondary {
+      background: #6c757d;
+    }
+
+    .message-notification-item-btn.danger {
+      background: #dc3545;
+    }
+
+    .message-notification-item-btn.danger:hover {
+      background: #c82333;
+    }
+
+    .no-messages {
+      text-align: center;
+      color: #666;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    /* Floating Message Button */
+    .floating-message-btn {
+      position: fixed;
+      bottom: 140px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffc107, #ff8c00);
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 193, 7, 0.4);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .floating-message-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(255, 193, 7, 0.6);
+    }
+
+    .floating-message-btn.show {
+      display: flex;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
+
+
+    /* Mobile responsive for floating button */
+    @media (max-width: 768px) {
+      .floating-message-btn {
+        bottom: 160px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        /* Ensure it's above the input area */
+        z-index: 1001;
+      }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 480px) {
+      .floating-message-btn {
+        bottom: 170px;
+        right: 10px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -538,6 +889,8 @@
             <button class="btn btn-sm btn-outline-light" onclick="loadAllStudents()" title="Refresh students">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
+            <!-- Message Badge -->
+            <div class="message-badge" id="messageBadge" style="display: none;">0</div>
           </div>
           <small id="selectedStudentInfo" style="opacity: 0.8;"></small>
           
@@ -580,6 +933,11 @@
     </div>
   </div>
 
+  <!-- Floating Message Button -->
+  <button class="floating-message-btn" id="floatingMessageBtn" onclick="showMessageNotifications()" title="View Messages">
+    <i class="bi bi-envelope"></i>
+  </button>
+
   <!-- Toast Container -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
 
@@ -588,7 +946,7 @@
 
   <script>
    const API_BASE = 'https://api.hamdan.help/api';
-    //const API_BASE = 'http://localhost:3000/api';
+   // const API_BASE = 'http://localhost:3000/api';
     const token = localStorage.getItem('token');
     let students = [];
     let selectedStudents = [];
@@ -606,6 +964,9 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Load students first
       loadAllStudents();
+      
+      // Start message polling system
+      startMessagePolling();
       
       // Add search functionality
       const studentSearch = document.getElementById('studentSearch');
@@ -710,12 +1071,6 @@
     function preSelectStudent(studentId, studentName, studentEmail) {
       console.log('preSelectStudent called with:', { studentId, studentName, studentEmail });
       
-      // Add student to selectedStudents array
-      if (!selectedStudents.includes(studentId)) {
-        selectedStudents.push(studentId);
-        console.log('Added student to selectedStudents:', selectedStudents);
-      }
-      
       // Create a mock student object for display
       const mockStudent = {
         id: studentId,
@@ -729,16 +1084,12 @@
         console.log('Added student to students array:', students);
       }
       
-      // Update the display
-      updateSelectedStudentsDisplay();
-      console.log('Updated selected students display');
-      
       // Select the student to trigger conversation loading
       selectStudent(mockStudent);
       console.log('Selected student for conversation:', mockStudent);
       
       // Show success message
-      showToast(`Student ${studentName} pre-selected for messaging`, 'success');
+      showToast(`تم فتح المحادثة مع ${studentName}`, 'success');
       
       // Clear URL parameters to avoid re-selection on refresh
       const url = new URL(window.location);
@@ -1353,6 +1704,260 @@
         toastEl.remove();
       }, 4000);
     }
+
+    // Message polling system
+    let messageCheckInterval;
+    let lastMessageCount = 0;
+    let allMessages = []; // Store all messages for the notifications panel
+    let deletedMessageIds = new Set(); // Store IDs of deleted messages
+
+    function startMessagePolling() {
+      // Load deleted message IDs from localStorage
+      loadDeletedMessageIds();
+      
+      // Check immediately on load
+      checkForNewMessages();
+      
+      // Then check every 30 seconds
+      messageCheckInterval = setInterval(checkForNewMessages, 30000);
+    }
+
+    // Load deleted message IDs from localStorage
+    function loadDeletedMessageIds() {
+      const stored = localStorage.getItem('deletedMessageIds');
+      if (stored) {
+        deletedMessageIds = new Set(JSON.parse(stored));
+      }
+    }
+
+    // Save deleted message IDs to localStorage
+    function saveDeletedMessageIds() {
+      localStorage.setItem('deletedMessageIds', JSON.stringify([...deletedMessageIds]));
+    }
+
+    async function checkForNewMessages() {
+      try {
+        const response = await fetch(`${API_BASE}/messages/admin/received`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          const messages = data.data.messages;
+          
+          // Filter out deleted messages
+          const filteredMessages = messages.filter(message => !deletedMessageIds.has(message.id));
+          const messageCount = filteredMessages.length;
+          
+          // Store filtered messages for notifications panel
+          allMessages = filteredMessages;
+          
+          // Update badge
+          updateMessageBadge(messageCount);
+          
+          // Show notification button if there are messages
+          updateMessageNotificationsButton(messageCount);
+          
+          // Show notification for new messages (only if not deleted)
+          if (messageCount > lastMessageCount && filteredMessages.length > 0) {
+            showMessageNotification(filteredMessages[0]); // Show latest message
+          }
+          
+          lastMessageCount = messageCount;
+        }
+      } catch (error) {
+        console.error('Error checking messages:', error);
+      }
+    }
+
+    function updateMessageBadge(count) {
+      const badge = document.getElementById('messageBadge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    }
+
+    function updateMessageNotificationsButton(count) {
+      const button = document.getElementById('floatingMessageBtn');
+      if (button) {
+        if (count > 0) {
+          button.classList.add('show');
+        } else {
+          button.classList.remove('show');
+        }
+      }
+    }
+
+    function showMessageNotification(message) {
+      // Remove existing notification
+      const existingNotification = document.querySelector('.message-notification');
+      if (existingNotification) {
+        existingNotification.remove();
+      }
+
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = 'message-notification';
+      notification.innerHTML = `
+        <div class="message-notification-header">
+          <h6 class="message-notification-title">رسالة جديدة</h6>
+          <button class="message-notification-close" onclick="closeNotification(this)">&times;</button>
+        </div>
+        <div class="message-notification-content">
+          <div class="message-notification-sender">${message.sender.name}</div>
+          <div class="message-notification-text">${message.content.substring(0, 100)}${message.content.length > 100 ? '...' : ''}</div>
+        </div>
+        <div class="message-notification-actions">
+          <button class="message-notification-btn" onclick="openChatWithUser('${message.sender.id}', '${message.sender.name}', '${message.sender.email}')">
+            فتح المحادثة
+          </button>
+          <button class="message-notification-btn secondary" onclick="closeNotification(this)">
+            إغلاق
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(notification);
+
+      // Auto-remove after 10 seconds
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 10000);
+    }
+
+    function closeNotification(button) {
+      button.closest('.message-notification').remove();
+    }
+
+    function openChatWithUser(studentId, studentName, studentEmail) {
+      // Close notification
+      const notification = document.querySelector('.message-notification');
+      if (notification) {
+        notification.remove();
+      }
+
+      // Pre-select the student
+      preSelectStudent(studentId, studentName, studentEmail);
+    }
+
+    // Show message notifications panel
+    function showMessageNotifications() {
+      // Check if panel is already open
+      const existingPanel = document.querySelector('.message-notifications-panel');
+      if (existingPanel) {
+        // Panel is open, close it with smooth animation
+        closeMessageNotifications();
+        return;
+      }
+
+      if (allMessages.length === 0) {
+        showToast('لا توجد رسائل', 'info');
+        return;
+      }
+
+      // Create notifications panel
+      const panel = document.createElement('div');
+      panel.className = 'message-notifications-panel';
+      panel.innerHTML = `
+        <div class="message-notifications-header">
+          <h6 class="message-notifications-title">الرسائل (${allMessages.length})</h6>
+          <button class="message-notifications-close" onclick="closeMessageNotifications()">&times;</button>
+        </div>
+        <div class="message-notifications-content">
+          ${allMessages.map((message, index) => `
+            <div class="message-notification-item" id="message-item-${index}" onclick="openChatWithUser('${message.sender.id}', '${message.sender.name}', '${message.sender.email}')">
+              <div class="message-notification-item-header">
+                <div class="message-notification-item-sender">${message.sender.name}</div>
+                <div class="message-notification-item-time">${message.createdAgo}</div>
+              </div>
+              <div class="message-notification-item-content">${message.content.substring(0, 80)}${message.content.length > 80 ? '...' : ''}</div>
+              <div class="message-notification-item-actions">
+                <button class="message-notification-item-btn" onclick="event.stopPropagation(); openChatWithUser('${message.sender.id}', '${message.sender.name}', '${message.sender.email}')">
+                  فتح المحادثة
+                </button>
+                <button class="message-notification-item-btn danger" onclick="event.stopPropagation(); deleteMessageFromDialog(${index})" title="حذف من القائمة">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <button class="message-notification-item-btn secondary" onclick="event.stopPropagation(); closeMessageNotifications()">
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.body.appendChild(panel);
+    }
+
+    function closeMessageNotifications() {
+      const panel = document.querySelector('.message-notifications-panel');
+      if (panel) {
+        // Add closing animation
+        panel.classList.add('closing');
+        
+        // Remove panel after animation completes
+        setTimeout(() => {
+          panel.remove();
+        }, 300);
+      }
+    }
+
+    // Delete message from dialog (UI only, not from database)
+    function deleteMessageFromDialog(messageIndex) {
+      // Get the message to delete
+      const messageToDelete = allMessages[messageIndex];
+      
+      // Add message ID to deleted set
+      deletedMessageIds.add(messageToDelete.id);
+      
+      // Save to localStorage
+      saveDeletedMessageIds();
+      
+      // Remove from allMessages array
+      allMessages.splice(messageIndex, 1);
+      
+      // Update the message count
+      updateMessageBadge(allMessages.length);
+      updateMessageNotificationsButton(allMessages.length);
+      
+      // Remove the message item from the panel
+      const messageItem = document.getElementById(`message-item-${messageIndex}`);
+      if (messageItem) {
+        messageItem.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => {
+          messageItem.remove();
+          
+          // Update the panel title with new count
+          const title = document.querySelector('.message-notifications-title');
+          if (title) {
+            title.textContent = `الرسائل (${allMessages.length})`;
+          }
+          
+          // If no messages left, close the panel
+          if (allMessages.length === 0) {
+            closeMessageNotifications();
+            showToast('تم حذف جميع الرسائل من القائمة', 'info');
+          }
+        }, 300);
+      }
+      
+      showToast('تم حذف الرسالة من القائمة', 'success');
+    }
+
+    // Clean up interval on page unload
+    window.addEventListener('beforeunload', () => {
+      if (messageCheckInterval) {
+        clearInterval(messageCheckInterval);
+      }
+    });
 
     function logout() {
       localStorage.clear();

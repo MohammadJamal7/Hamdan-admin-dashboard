@@ -15,6 +15,7 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
+
     .navbar {
       background-color: rgba(0, 0, 0, 0.85);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -206,6 +207,7 @@
           visibleCards.push(card.title);
           const div = document.createElement('div');
           div.className = 'card';
+          
           div.innerHTML = `<div class="card-body">
             <div class="card-icon">${card.icon}</div>
             <h5 class="card-title">${card.title}</h5>
@@ -216,9 +218,11 @@
       });
       console.log('Cards visible to this user:', visibleCards);
 
+
       // Navbar is kept simple with only Dashboard and Logout
       // All navigation is handled through the dashboard cards
     })();
+
 
     function logout() {
       localStorage.clear();
