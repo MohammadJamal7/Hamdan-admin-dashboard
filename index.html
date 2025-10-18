@@ -98,6 +98,37 @@
       color: #000;
     }
 
+    /* Dual button card styling */
+    .card .d-flex.gap-2 .btn {
+      margin: 0;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+    }
+
+    .card .d-flex.gap-2 .btn-warning {
+      background-color: #ffc107;
+      color: #000;
+      border-color: #ffc107;
+    }
+
+    .card .d-flex.gap-2 .btn-info {
+      background-color: #0dcaf0;
+      color: #000;
+      border-color: #0dcaf0;
+    }
+
+    .card .d-flex.gap-2 .btn-warning:hover {
+      background-color: #ffca2c;
+      color: #000;
+      border-color: #ffca2c;
+    }
+
+    .card .d-flex.gap-2 .btn-info:hover {
+      background-color: #31d2f2;
+      color: #000;
+      border-color: #31d2f2;
+    }
+
     @keyframes float {
       0%, 100% {
         transform: translateY(0px);
@@ -183,7 +214,16 @@
 
       // Dashboard cards config
       const cards = [
-        { perm: 'manage_courses', icon: '🎥', title: 'Manage Videos', link: 'videos.html' },
+        { 
+          perm: 'manage_courses', 
+          icon: '🎥', 
+          title: 'Manage Videos', 
+          type: 'dual-button',
+          buttons: [
+            { text: 'DRM Videos', link: 'videos.html', class: 'btn-warning' },
+            { text: 'Normal Videos', link: 'videos-normal.html', class: 'btn-info' }
+          ]
+        },
         { perm: 'manage_playlists', icon: '📂', title: 'Playlists', link: 'playlists.html' },
         { perm: 'manage_students', icon: '👨‍🎓', title: 'Students', link: 'students.html' },
         { perm: 'send_notifications', icon: '🔔', title: 'Send Notifications', link: 'notifications.html' },
@@ -208,11 +248,25 @@
           const div = document.createElement('div');
           div.className = 'card';
           
-          div.innerHTML = `<div class="card-body">
-            <div class="card-icon">${card.icon}</div>
-            <h5 class="card-title">${card.title}</h5>
-            <a href="${card.link}" class="btn text-white">Go</a>
-          </div>`;
+          if (card.type === 'dual-button') {
+            // Special rendering for dual-button cards
+            div.innerHTML = `<div class="card-body">
+              <div class="card-icon">${card.icon}</div>
+              <h5 class="card-title">${card.title}</h5>
+              <div class="d-flex flex-column gap-2 mt-3">
+                ${card.buttons.map(button => 
+                  `<a href="${button.link}" class="btn ${button.class} text-white">${button.text}</a>`
+                ).join('')}
+              </div>
+            </div>`;
+          } else {
+            // Standard single-button card
+            div.innerHTML = `<div class="card-body">
+              <div class="card-icon">${card.icon}</div>
+              <h5 class="card-title">${card.title}</h5>
+              <a href="${card.link}" class="btn text-white">Go</a>
+            </div>`;
+          }
           cardWrapper.appendChild(div);
         }
       });

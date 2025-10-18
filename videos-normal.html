@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mux Videos with Playlist Assignment</title>
+  <title>Normal Videos from Mux (Non-DRM)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="images/logo.png" type="image/png">
   <link rel="shortcut icon" href="images/logo.png" type="image/png">
@@ -106,6 +106,17 @@
       font-size: 48px;
       color: #f1f1f1;
     }
+
+    .normal-video-badge {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -117,7 +128,12 @@
   </div>
 
   <div class="container">
-    <h1 class="text-center my-4">Incoming Videos from Mux</h1>
+    <h1 class="text-center my-4">Normal Videos from Mux (Non-DRM)</h1>
+    <div class="text-center mb-4">
+      <span class="normal-video-badge">
+        <i class="bi bi-shield-check"></i> Public Videos Only
+      </span>
+    </div>
     <div id="videoList"></div>
   </div>
 
@@ -128,7 +144,7 @@
   <div class="loading-overlay" id="loadingOverlay" style="display: flex;">
     <div class="text-center">
       <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status"></div>
-      <p class="mt-3 fw-bold fs-5 text-secondary">Loading videos, please wait...</p>
+      <p class="mt-3 fw-bold fs-5 text-secondary">Loading normal videos, please wait...</p>
     </div>
   </div>
 
@@ -137,7 +153,7 @@
 
   <script>
     // Define API base URL - make sure this matches your backend
-  //const API_BASE = 'https://api.hamdan.help/api';
+    //const API_BASE = 'https://api.hamdan.help/api';
     const API_BASE = 'http://localhost:3000/api';
     console.log('API Base URL:', API_BASE);
 
@@ -147,7 +163,6 @@
 
     if (!token) {
       showToast('You are not authenticated. Please login first.', 'danger');
-      // REMOVED: window.location.href = '/login.html';
       console.warn('No authentication token found');
     }
 
@@ -170,11 +185,11 @@
       }
     };
 
-    const fetchMuxVideos = async () => {
+    const fetchNormalMuxVideos = async () => {
       try {
         document.getElementById('loadingOverlay').style.display = 'flex';
-        console.log('Fetching videos from Mux...');
-        const res = await fetch(`${API_BASE}/videos`, {
+        console.log('Fetching normal videos from Mux...');
+        const res = await fetch(`${API_BASE}/videos-normal`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -192,13 +207,13 @@
         }
       } catch (err) {
         console.error(err);
-        showToast('Failed to load videos: ' + err.message, 'danger');
+        showToast('Failed to load normal videos: ' + err.message, 'danger');
 
         // Show error in UI
         const videoList = document.getElementById('videoList');
         videoList.innerHTML = `
           <div class="alert alert-danger">
-            <h4>❌ Failed to Load Videos</h4>
+            <h4>❌ Failed to Load Normal Videos</h4>
             <p><strong>Error:</strong> ${err.message}</p>
             <p>Please check the browser console for more details.</p>
           </div>
@@ -209,7 +224,7 @@
     };
 
     const displayVideos = (videos) => {
-      console.log('Displaying videos:', videos.length);
+      console.log('Displaying normal videos:', videos.length);
 
       const videoList = document.getElementById('videoList');
       videoList.innerHTML = '<div class="row" id="videoRow"></div>';
@@ -219,8 +234,8 @@
         videoList.innerHTML = `
           <div class="no-videos-card">
             <i class="bi bi-camera-video-off"></i>
-            <h3 class="mt-3">No Videos Found</h3>
-            <p class="text-warning">There are currently no videos available from Mux. Please upload some or check back later.</p>
+            <h3 class="mt-3">No Normal Videos Found</h3>
+            <p class="text-warning">There are currently no normal (non-DRM) videos available from Mux. Please upload some or check back later.</p>
           </div>
         `;
         return;
@@ -229,7 +244,12 @@
       videos.forEach(async video => {
         const playbackId = video.playback_ids?.[0]?.id;
         const playbackPolicy = video.playback_ids?.[0]?.policy || '';
-        if (!playbackId) return;
+        
+        // Only show public videos (non-DRM)
+        if (!playbackId || playbackPolicy === 'drm' || playbackPolicy === 'signed') {
+          console.log(`Skipping video ${video.id} - not a public video (policy: ${playbackPolicy})`);
+          return;
+        }
 
         const videoCard = document.createElement('div');
         videoCard.className = 'col-md-4 d-flex mb-4';
@@ -245,6 +265,9 @@
 
         videoCard.innerHTML = `
           <div class="video-card w-100">
+            <div class="normal-video-badge mb-2">
+              <i class="bi bi-globe"></i> Public Video
+            </div>
             <h5>${videoTitle}</h5>
             <div id="mux-player-container-${video.id}"></div>
 
@@ -272,55 +295,10 @@
 
         videoRow.appendChild(videoCard);
 
-        // Fetch all required tokens in parallel
-        const tokenEndpoints = [
-          { attr: 'playback-token', url: `${API_BASE}/mux/playback-token?playbackId=${playbackId}` },
-          { attr: 'drm-token', url: `${API_BASE}/mux/drm-token?playbackId=${playbackId}` },
-          { attr: 'thumbnail-token', url: `${API_BASE}/mux/thumbnail-token?playbackId=${playbackId}` },
-          { attr: 'storyboard-token', url: `${API_BASE}/mux/storyboard-token?playbackId=${playbackId}` },
-        ];
-
-        const headers = { Authorization: `Bearer ${token}` };
-        const tokenFetches = tokenEndpoints.map(e => fetch(e.url, { headers }).then(r => r.json()));
-        const tokens = await Promise.all(tokenFetches);
-
-        // Create mux-player element
+        // Create mux-player element for public videos (no tokens needed)
         const muxPlayer = document.createElement('mux-player');
         muxPlayer.setAttribute('playback-id', playbackId);
         muxPlayer.setAttribute('style', 'width: 100%; aspect-ratio: 16/9; background: #000;');
-        // Set tokens based on playback policy
-        if (playbackPolicy === 'drm') {
-          // DRM only: set both playback-token and drm-token
-          if (tokens[0].success && tokens[0].token) {
-            muxPlayer.setAttribute('playback-token', tokens[0].token);
-          }
-          if (tokens[1].success && tokens[1].token) {
-            muxPlayer.setAttribute('drm-token', tokens[1].token);
-          }
-        } else if (playbackPolicy === 'signed') {
-          // Signed only: set only playback-token
-          if (tokens[0].success && tokens[0].token) {
-            muxPlayer.setAttribute('playback-token', tokens[0].token);
-          }
-        } else if (playbackPolicy === 'public') {
-          // No token needed
-        } else if (Array.isArray(video.playback_ids) && video.playback_ids[0]?.policy && video.playback_ids.length > 1) {
-          // If both policies exist, set both
-          if (tokens[0].success && tokens[0].token) {
-            muxPlayer.setAttribute('playback-token', tokens[0].token);
-          }
-          if (tokens[1].success && tokens[1].token) {
-            muxPlayer.setAttribute('drm-token', tokens[1].token);
-          }
-        }
-        // Always set thumbnail and storyboard tokens if available
-        if (tokens[2].success && tokens[2].token) {
-          muxPlayer.setAttribute('thumbnail-token', tokens[2].token);
-        }
-        if (tokens[3].success && tokens[3].token) {
-          muxPlayer.setAttribute('storyboard-token', tokens[3].token);
-        }
-        // Optionally set poster/thumbnail
         muxPlayer.setAttribute('metadata-title', videoTitle);
         muxPlayer.setAttribute('metadata-description', videoDescription);
 
@@ -390,7 +368,7 @@
           const muxPlayerElement = document.querySelector(`#mux-player-container-${video.id} mux-player`);
           const videoDuration = muxPlayerElement && muxPlayerElement.duration ? muxPlayerElement.duration : 0;
 
-          console.log('Creating course with video:', {
+          console.log('Creating course with normal video:', {
             videoId: video.id,
             playlistId,
             playbackId,
@@ -427,11 +405,8 @@
        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
      }
 
-     // Show loading indicator (commented out since loadingOverlay is not available)
-     // document.getElementById('loadingOverlay').style.display = 'flex';
-
      // Log the start of the process with timestamp
-     console.log(`[${new Date().toISOString()}] Starting course creation for video:`, video.id);
+     console.log(`[${new Date().toISOString()}] Starting course creation for normal video:`, video.id);
 
      try {
        // Create FormData object to match backend expectations exactly
@@ -448,7 +423,7 @@
        formData.append('video', `https://stream.mux.com/${playbackId}.m3u8`);
        formData.append('duration', video.duration || videoDuration || 0);
        formData.append('playlistId', playlistId);
-       formData.append('isLocked', 'true');
+       formData.append('isLocked', 'false'); // Normal videos are not locked
 
        // Fields array - must be a valid JSON string array
        const emptyFields = [];
@@ -456,9 +431,6 @@
 
        // Social media links - must be a valid JSON string array
        formData.append('socialMedia', JSON.stringify(socialMediaLinks || []));
-
-       // Remove thumbnail append
-       // formData.append('thumbnail', null);
 
        console.log('FormData contents:');
        for (let [key, value] of formData.entries()) {
@@ -517,7 +489,7 @@
          } else {
            console.warn('Could not find video element to remove for video:', video.id);
          }
-         showToast(`✅ Course created: ${video.meta?.title || 'New video'}`, 'success');
+         showToast(`✅ Course created: ${video.meta?.title || 'New normal video'}`, 'success');
          // Reload the page to update the video list
          setTimeout(() => { window.location.reload(); }, 800);
 
@@ -539,7 +511,6 @@
            console.warn('Course verification error:', verifyErr);
          }
 
-         // REMOVED: No automatic page reload or redirects
        } else {
          throw new Error(data.message || 'Course creation failed');
        }
@@ -564,7 +535,6 @@
 
        showToast('Failed to create course: ' + err.message, 'danger');
      } finally {
-       // Hide loading indicator (if any)
        // Re-enable the button if the video card still exists (not replaced)
        const btnId = `btn-${video.id}`;
        const button = document.getElementById(btnId);
@@ -602,12 +572,11 @@
     // Init
     (async () => {
       await fetchPlaylists();
-      await fetchMuxVideos();
+      await fetchNormalMuxVideos();
     })();
 
     function logout() {
       localStorage.clear();
-      // REMOVED: window.location.href = 'login.html';
       showToast('Logged out successfully', 'info');
       console.log('User logged out - localStorage cleared');
     }

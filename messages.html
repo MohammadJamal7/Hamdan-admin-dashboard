@@ -247,6 +247,26 @@
       line-height: 1.4;
     }
 
+    .message-text a,
+    .message-link {
+      color: #ffc107 !important;
+      text-decoration: underline !important;
+      word-break: break-all;
+      transition: all 0.3s ease;
+      display: inline-block;
+      margin: 1px 0;
+    }
+
+    .message-text a:hover,
+    .message-link:hover {
+      color: #ff8c00 !important;
+      text-decoration: none !important;
+      background: rgba(255, 193, 7, 0.1);
+      padding: 2px 4px;
+      border-radius: 4px;
+      transform: scale(1.02);
+    }
+
     .message-time {
       font-size: 0.75rem;
       opacity: 0.7;
@@ -889,6 +909,10 @@
             <button class="btn btn-sm btn-outline-light" onclick="loadAllStudents()" title="Refresh students">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
+            <!-- View Received Messages Button -->
+            <button class="btn btn-sm btn-outline-warning" onclick="toggleReceivedMessages()" title="View received messages">
+              <i class="bi bi-inbox"></i> Received Messages
+            </button>
             <!-- Message Badge -->
             <div class="message-badge" id="messageBadge" style="display: none;">0</div>
           </div>
@@ -925,6 +949,25 @@
     </div>
   </div>
 
+  <!-- Received Messages Section -->
+  <div class="container mt-4 mb-5 pb-5" id="receivedMessagesSection" style="display: none;">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-inbox"></i> Received Messages from Students
+        </h5>
+        <button class="btn btn-sm btn-outline-light" onclick="toggleReceivedMessages()" title="Close received messages">
+          <i class="bi bi-x"></i> Close
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="receivedMessagesList">
+          <!-- Received messages will be displayed here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay" style="display: none;">
     <div class="text-center">
@@ -945,11 +988,12 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-   const API_BASE = 'https://api.hamdan.help/api';
-   // const API_BASE = 'http://localhost:3000/api';
+   //const API_BASE = 'https://api.hamdan.help/api';
+    const API_BASE = 'http://localhost:3000/api';
     const token = localStorage.getItem('token');
     let students = [];
     let selectedStudents = [];
+    let selectedStudent = null;
 
     // Check authentication
     if (!token) {
@@ -1069,7 +1113,9 @@
 
     // Pre-select student from URL parameters
     function preSelectStudent(studentId, studentName, studentEmail) {
+      console.log('=== preSelectStudent START ===');
       console.log('preSelectStudent called with:', { studentId, studentName, studentEmail });
+      console.log('Current selectedStudent before:', selectedStudent);
       
       // Create a mock student object for display
       const mockStudent = {
@@ -1077,14 +1123,18 @@
         name: studentName,
         email: studentEmail
       };
+      console.log('Created mockStudent:', mockStudent);
       
       // Add to students array if not already there
       if (!students.find(s => s.id === studentId)) {
         students.push(mockStudent);
-        console.log('Added student to students array:', students);
+        console.log('Added student to students array. Total students:', students.length);
+      } else {
+        console.log('Student already exists in students array');
       }
       
       // Select the student to trigger conversation loading
+      console.log('About to call selectStudent with:', mockStudent);
       selectStudent(mockStudent);
       console.log('Selected student for conversation:', mockStudent);
       
@@ -1098,6 +1148,7 @@
       url.searchParams.delete('studentEmail');
       window.history.replaceState({}, '', url);
       console.log('Cleared URL parameters');
+      console.log('=== preSelectStudent END ===');
     }
 
     // Load all students function
@@ -1184,18 +1235,51 @@
 
     // Select student function
     function selectStudent(student) {
+      console.log('=== selectStudent START ===');
+      console.log('selectStudent called with:', student);
+      console.log('Current selectedStudent before update:', selectedStudent);
+      
+      // Clear any existing conversation first
+      const messagesArea = document.getElementById('messagesArea');
+      if (messagesArea) {
+        console.log('Clearing messages area in selectStudent');
+        messagesArea.innerHTML = `
+          <div class="empty-chat" id="emptyChat">
+            <i class="fas fa-comments"></i>
+            <h5>Loading conversation...</h5>
+            <p>Please wait while we load the messages</p>
+          </div>
+        `;
+      }
+      
       selectedStudent = student;
+      console.log('Updated selectedStudent to:', selectedStudent);
       
       const studentSearch = document.getElementById('studentSearch');
       const selectedStudentInfo = document.getElementById('selectedStudentInfo');
       const searchResults = document.getElementById('studentSearchResults');
       
-      if (studentSearch) studentSearch.value = student.name;
-      if (selectedStudentInfo) selectedStudentInfo.textContent = `Chatting with ${student.name} (${student.email})`;
-      if (searchResults) searchResults.style.display = 'none';
+      if (studentSearch) {
+        studentSearch.value = student.name;
+        console.log('Updated search field to:', student.name);
+      }
+      if (selectedStudentInfo) {
+        selectedStudentInfo.textContent = `Chatting with ${student.name} (${student.email})`;
+        console.log('Updated selected student info');
+      }
+      if (searchResults) {
+        searchResults.style.display = 'none';
+      }
       
-      // Load conversation with this student
-      loadConversationWithStudent(student.id);
+      console.log('About to load conversation with student:', student.id);
+      
+      // Add a small delay to ensure DOM is updated
+      setTimeout(() => {
+        console.log('Loading conversation after delay for student:', student.id);
+        loadConversationWithStudent(student.id);
+      }, 100);
+      
+      console.log('=== selectStudent END ===');
     }
 
     // Clear student search
@@ -1212,61 +1296,91 @@
       
       // Clear messages area
       const messagesArea = document.getElementById('messagesArea');
-      const emptyChat = document.getElementById('emptyChat');
       
-      if (messagesArea && emptyChat) {
-        messagesArea.innerHTML = '';
-        messagesArea.appendChild(emptyChat);
-        emptyChat.style.display = 'flex';
+      if (messagesArea) {
+        messagesArea.innerHTML = `
+          <div class="empty-chat" id="emptyChat">
+            <i class="fas fa-comments"></i>
+            <h5>Select a student to start messaging</h5>
+            <p>Choose a student from the dropdown above to view your conversation</p>
+          </div>
+        `;
       }
     }
 
     // Load conversation with specific student
     async function loadConversationWithStudent(studentId) {
       try {
+        console.log('=== loadConversationWithStudent START ===');
+        console.log('loadConversationWithStudent called with studentId:', studentId);
+        console.log('Current selectedStudent:', selectedStudent);
+        console.log('API URL:', `${API_BASE}/messages/admin/conversation/${studentId}`);
+        
+        // Show loading indicator
+        const messagesArea = document.getElementById('messagesArea');
+        const emptyChat = document.getElementById('emptyChat');
+        if (messagesArea && emptyChat) {
+          messagesArea.innerHTML = '';
+          messagesArea.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading conversation...</p></div>';
+        }
+        
         const response = await fetch(`${API_BASE}/messages/admin/conversation/${studentId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('Conversation data received:', data);
+        console.log('Data success:', data.success);
+        console.log('Messages count:', data.data?.messages?.length || 0);
         
         if (data.success) {
+          console.log('Displaying messages for student:', studentId);
           displayMessages(data.data.messages);
         } else {
+          console.error('Error in conversation response:', data);
           showToast('Error loading conversation', 'danger');
         }
+        console.log('=== loadConversationWithStudent END ===');
       } catch (error) {
         console.error('Error loading conversation:', error);
         showToast('Error loading conversation', 'danger');
+        console.log('=== loadConversationWithStudent ERROR ===');
       }
     }
 
     // Display messages in chat format
     function displayMessages(messages) {
-      const messagesArea = document.getElementById('messagesArea');
-      const emptyChat = document.getElementById('emptyChat');
+      console.log('displayMessages called with messages:', messages);
+      console.log('Current selectedStudent:', selectedStudent);
       
-      // Check if elements exist
+      const messagesArea = document.getElementById('messagesArea');
+      
+      // Check if messagesArea exists
       if (!messagesArea) {
         console.error('messagesArea element not found');
         return;
       }
       
-      if (!emptyChat) {
-        console.error('emptyChat element not found');
-        return;
-      }
-      
       if (messages.length === 0) {
-        emptyChat.style.display = 'flex';
+        console.log('No messages to display, showing empty chat');
+        messagesArea.innerHTML = `
+          <div class="empty-chat" id="emptyChat">
+            <i class="fas fa-comments"></i>
+            <h5>No messages yet</h5>
+            <p>Start the conversation with this student</p>
+          </div>
+        `;
         return;
       }
       
-      emptyChat.style.display = 'none';
+      console.log('Clearing messages area and displaying', messages.length, 'messages');
       messagesArea.innerHTML = '';
       
       // Messages are already sorted by creation time (oldest first) from the backend
@@ -1288,8 +1402,11 @@
         // Format time in Arabic
         const timeString = formatArabicTime(new Date(message.createdAt));
         
+        // Convert URLs to clickable links
+        const messageContent = convertUrlsToLinks(message.content);
+        
         messageBubble.innerHTML = `
-          <p class="message-text">${message.content}</p>
+          <p class="message-text">${messageContent}</p>
           <div class="message-time">${timeString}</div>
         `;
         
@@ -1299,6 +1416,41 @@
       
       // Scroll to bottom
       scrollToBottom();
+    }
+
+    // Convert URLs in text to clickable links
+    function convertUrlsToLinks(text) {
+      if (!text) return text;
+      
+      // URL regex pattern that matches http, https, www, and common domains
+      // Updated to be more precise and avoid false matches
+      const urlRegex = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s<>"']*)?)/gi;
+      
+      return text.replace(urlRegex, function(url) {
+        // Clean up the URL
+        url = url.trim();
+        
+        // Skip if it's already inside an HTML tag
+        if (url.includes('<') || url.includes('>')) {
+          return url;
+        }
+        
+        // Add protocol if missing
+        let href = url;
+        if (!url.match(/^https?:\/\//i)) {
+          href = 'https://' + url;
+        }
+        
+        // Validate the URL format
+        try {
+          new URL(href);
+        } catch (e) {
+          return url; // Return original text if URL is invalid
+        }
+        
+        // Create clickable link with proper styling
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="message-link">${url}</a>`;
+      });
     }
 
     // Format time in Arabic
@@ -1418,8 +1570,11 @@
       const now = new Date();
       const timeString = formatArabicTime(now);
       
+      // Convert URLs to clickable links
+      const messageContent = convertUrlsToLinks(content);
+      
       messageBubble.innerHTML = `
-        <p class="message-text">${content}</p>
+        <p class="message-text">${messageContent}</p>
         <div class="message-time">${timeString}</div>
       `;
       
@@ -1588,6 +1743,23 @@
     }
 
 
+
+     // Toggle received messages section
+     function toggleReceivedMessages() {
+       const receivedSection = document.getElementById('receivedMessagesSection');
+       const chatSection = document.querySelector('.chat-container').parentElement;
+       
+       if (receivedSection.style.display === 'none') {
+         // Show received messages section
+         receivedSection.style.display = 'block';
+         chatSection.style.display = 'none';
+         loadReceivedMessages();
+       } else {
+         // Hide received messages section
+         receivedSection.style.display = 'none';
+         chatSection.style.display = 'block';
+       }
+     }
 
      // Load received messages from students
      async function loadReceivedMessages() {
@@ -1837,14 +2009,53 @@
     }
 
     function openChatWithUser(studentId, studentName, studentEmail) {
+      console.log('=== openChatWithUser START ===');
+      console.log('Opening chat with:', { studentId, studentName, studentEmail });
+      console.log('Current selectedStudent before:', selectedStudent);
+      
       // Close notification
       const notification = document.querySelector('.message-notification');
       if (notification) {
         notification.remove();
       }
 
+      // Close notifications panel if open
+      const notificationsPanel = document.querySelector('.message-notifications-panel');
+      if (notificationsPanel) {
+        notificationsPanel.remove();
+      }
+
+      // Ensure we're in chat view (not received messages view)
+      const receivedSection = document.getElementById('receivedMessagesSection');
+      const chatSection = document.querySelector('.chat-container').parentElement;
+      
+      if (receivedSection && receivedSection.style.display !== 'none') {
+        receivedSection.style.display = 'none';
+        chatSection.style.display = 'block';
+        console.log('Switched to chat view');
+      }
+
+      // Clear any existing conversation first
+      const messagesArea = document.getElementById('messagesArea');
+      if (messagesArea) {
+        console.log('Clearing messages area');
+        messagesArea.innerHTML = `
+          <div class="empty-chat" id="emptyChat">
+            <i class="fas fa-comments"></i>
+            <h5>Loading conversation...</h5>
+            <p>Please wait while we load the messages</p>
+          </div>
+        `;
+      }
+
+      // Reset selectedStudent to null first to ensure clean state
+      selectedStudent = null;
+      console.log('Reset selectedStudent to null');
+
       // Pre-select the student
+      console.log('About to call preSelectStudent');
       preSelectStudent(studentId, studentName, studentEmail);
+      console.log('=== openChatWithUser END ===');
     }
 
     // Show message notifications panel
