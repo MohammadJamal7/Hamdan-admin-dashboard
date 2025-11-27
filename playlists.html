@@ -12,23 +12,22 @@
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="https://unpkg.com/@mux/mux-player"></script>
   <script>
-    // Suppress MUX player debug messages globally
+    // Suppress console noise from iframe embeds
     if (window.console) {
       const originalWarn = console.warn;
       const originalError = console.error;
       console.warn = function(...args) {
         const message = args.join(' ');
-        if (message.includes('[mux-player') || message.includes('Missing expected thumbnail token')) {
-          return; // Suppress MUX player warnings
+        if (message.includes('Feature Policy') || message.includes('Partitioned cookie')) {
+          return;
         }
         originalWarn.apply(console, args);
       };
       console.error = function(...args) {
         const message = args.join(' ');
-        if (message.includes('[mux-player')) {
-          return; // Suppress MUX player errors
+        if (message.includes('Feature Policy') || message.includes('Partitioned cookie')) {
+          return;
         }
         originalError.apply(console, args);
       };
@@ -284,9 +283,12 @@
 
   <div class="container mt-4">
     <div class="row mb-4">
-      <div class="col-md-6">
+      <div class="col-md-6 d-flex gap-2">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlaylistModal">
           + New Playlist
+        </button>
+        <button class="btn btn-success" id="bulkAssignBtn" data-bs-toggle="modal" data-bs-target="#bulkAssignModal">
+          <i class="bi bi-people"></i> Bulk Assign Students
         </button>
       </div>
       <div class="col-md-6">
@@ -299,6 +301,35 @@
       </div>
     </div>
     <div id="playlistsContainer"></div>
+  </div>
+
+  <!-- Bulk Assign Students Modal -->
+  <div class="modal fade" id="bulkAssignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <form class="modal-content" id="bulkAssignForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Bulk Assign Students to Playlists</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Select Playlists</label>
+              <div id="bulkPlaylistsList" style="max-height: 250px; overflow-y: auto; border: 1px solid #444; border-radius: 8px; padding: 10px; background: rgba(255,255,255,0.03);"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Search & Select Students</label>
+              <input type="text" class="form-control mb-2" id="bulkStudentSearchInput" placeholder="Search students by name or email...">
+              <div id="bulkStudentsList" style="max-height: 250px; overflow-y: auto; border: 1px solid #444; border-radius: 8px; padding: 10px; background: rgba(255,255,255,0.03);"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-check2-all"></i> Assign Selected</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Toast Container -->
@@ -379,7 +410,26 @@
           <!-- Search and Add Students -->
           <div class="card mb-4">
             <div class="card-body">
-              <h6 class="card-title">Add Students to Playlist</h6>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title mb-0">Add Students to Playlist</h6>
+                  <div>
+                    <button class="btn btn-outline-info btn-sm" id="importStudentsBtn" type="button">
+                      <i class="bi bi-download"></i> Import Students from Playlist
+                    </button>
+                  </div>
+                </div>
+                <div id="importStudentsSection" class="mb-3 d-none">
+                  <div class="input-group">
+                              <select class="form-select bg-dark text-light" id="importPlaylistSelect" style="background-color: #23272b !important; color: #fff !important;">
+                      <option value="">Select playlist...</option>
+                    </select>
+                    <button class="btn btn-info" id="doImportStudentsBtn" type="button">
+                      <i class="bi bi-arrow-down-circle"></i> Import
+                    </button>
+                    <button class="btn btn-secondary" id="cancelImportBtn" type="button">Cancel</button>
+                  </div>
+                  <div id="importStatusMsg" class="mt-2"></div>
+                </div>
               <div class="input-group mb-3">
                 <input type="text" class="form-control" id="studentSearchInput" placeholder="Search students by name or email...">
                 <button class="btn btn-primary" type="button" id="searchStudentsBtn">Search</button>
@@ -425,6 +475,161 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
+    // --- Import Students from Playlist Logic ---
+    let importPlaylistsCache = [];
+    document.addEventListener('click', async (event) => {
+      // Show import section
+      if (event.target && event.target.id === 'importStudentsBtn') {
+        const section = document.getElementById('importStudentsSection');
+        section.classList.remove('d-none');
+        // Load playlists into dropdown (excluding current)
+        const currentPlaylistId = document.getElementById('currentPlaylistId').value;
+        if (importPlaylistsCache.length === 0) {
+          const res = await fetch(`${BASE_URL}/playlists`, { headers: { Authorization: 'Bearer ' + token } });
+          const data = await res.json();
+          importPlaylistsCache = data.success ? data.data : [];
+        }
+        const select = document.getElementById('importPlaylistSelect');
+        select.innerHTML = '<option value="">Select playlist...</option>' +
+          importPlaylistsCache.filter(p => p.id !== currentPlaylistId).map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        document.getElementById('importStatusMsg').innerHTML = '';
+      }
+      // Cancel import
+      if (event.target && event.target.id === 'cancelImportBtn') {
+        document.getElementById('importStudentsSection').classList.add('d-none');
+        document.getElementById('importStatusMsg').innerHTML = '';
+      }
+      // Do import
+      if (event.target && event.target.id === 'doImportStudentsBtn') {
+        const select = document.getElementById('importPlaylistSelect');
+        const fromPlaylistId = select.value;
+        const toPlaylistId = document.getElementById('currentPlaylistId').value;
+        if (!fromPlaylistId || !toPlaylistId) {
+          document.getElementById('importStatusMsg').innerHTML = '<span class="text-danger">Please select a playlist.</span>';
+          return;
+        }
+  document.getElementById('importStatusMsg').innerHTML = '<span class="text-info"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Importing students...</span>';
+        // Fetch students from source playlist
+        try {
+          const res = await fetch(`${BASE_URL}/playlists/${fromPlaylistId}/students`, { headers: { Authorization: 'Bearer ' + token } });
+          const data = await res.json();
+          const studentsToImport = Array.isArray(data.data) ? data.data : (data.data.students || []);
+          // Fetch students already in target playlist
+          const res2 = await fetch(`${BASE_URL}/playlists/${toPlaylistId}/students`, { headers: { Authorization: 'Bearer ' + token } });
+          const data2 = await res2.json();
+          const alreadyIn = new Set((Array.isArray(data2.data) ? data2.data : (data2.data.students || [])).map(s => s.id));
+          let imported = 0, skipped = 0, failed = 0;
+          for (const student of studentsToImport) {
+            if (alreadyIn.has(student.id)) { skipped++; continue; }
+            try {
+              const res3 = await fetch(`${BASE_URL}/students/${student.id}/playlists/${toPlaylistId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+              });
+              const result3 = await res3.json();
+              if (res3.ok && result3.success) imported++;
+              else failed++;
+            } catch { failed++; }
+          }
+          document.getElementById('importStatusMsg').innerHTML = `<span class="text-success">Imported: ${imported}, Skipped: ${skipped}, Failed: ${failed}</span>`;
+          loadPlaylistStudents(toPlaylistId);
+        } catch (err) {
+          document.getElementById('importStatusMsg').innerHTML = '<span class="text-danger">Error importing students.</span>';
+        }
+      }
+    });
+    // --- Bulk Assign Students Logic ---
+    let bulkAllPlaylists = [];
+    let bulkAllStudents = [];
+    let bulkSelectedPlaylists = new Set();
+    let bulkSelectedStudents = new Set();
+
+    // Open modal: load playlists and students
+    document.getElementById('bulkAssignBtn').addEventListener('click', async () => {
+      // Fetch playlists if not already loaded
+      const playlistsRes = await fetch(`${BASE_URL}/playlists`, { headers: { Authorization: 'Bearer ' + token } });
+      const playlistsData = await playlistsRes.json();
+      bulkAllPlaylists = playlistsData.success ? playlistsData.data : [];
+      // Render playlists
+      const plList = document.getElementById('bulkPlaylistsList');
+      plList.innerHTML = bulkAllPlaylists.length ? bulkAllPlaylists.map(pl =>
+        `<div><label><input type="checkbox" class="bulk-playlist-checkbox" value="${pl.id}"> ${pl.title}</label></div>`
+      ).join('') : '<div class="text-warning">No playlists found.</div>';
+      bulkSelectedPlaylists.clear();
+
+      // Fetch students if not already loaded
+      if (bulkAllStudents.length === 0) {
+        const studentsRes = await fetch(`${BASE_URL}/students`, { headers: { Authorization: 'Bearer ' + token } });
+        const studentsData = await studentsRes.json();
+        bulkAllStudents = studentsData.success ? studentsData.data : [];
+      }
+      renderBulkStudentsList('');
+      bulkSelectedStudents.clear();
+    });
+
+    // Handle playlist checkbox selection
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('bulk-playlist-checkbox')) {
+        const id = e.target.value;
+        if (e.target.checked) bulkSelectedPlaylists.add(id);
+        else bulkSelectedPlaylists.delete(id);
+      }
+      if (e.target.classList.contains('bulk-student-checkbox')) {
+        const id = e.target.value;
+        if (e.target.checked) bulkSelectedStudents.add(id);
+        else bulkSelectedStudents.delete(id);
+      }
+    });
+
+    // Student search in bulk modal
+    document.getElementById('bulkStudentSearchInput').addEventListener('input', (e) => {
+      renderBulkStudentsList(e.target.value.trim());
+    });
+
+    function renderBulkStudentsList(query) {
+      const list = document.getElementById('bulkStudentsList');
+      let students = bulkAllStudents;
+      if (query && query.length > 0) {
+        const q = query.toLowerCase();
+        students = students.filter(s =>
+          (s.name && s.name.toLowerCase().includes(q)) ||
+          (s.email && s.email.toLowerCase().includes(q))
+        );
+      }
+      list.innerHTML = students.length ? students.map(st =>
+        `<div><label><input type="checkbox" class="bulk-student-checkbox" value="${st.id}"> ${st.name || 'N/A'} <span class='text-muted' style='font-size:0.9em'>${st.email || ''}</span></label></div>`
+      ).join('') : '<div class="text-warning">No students found.</div>';
+    }
+
+    // Handle bulk assign form submit
+    document.getElementById('bulkAssignForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (bulkSelectedPlaylists.size === 0 || bulkSelectedStudents.size === 0) {
+        showToast('Please select at least one playlist and one student.', 'danger');
+        return;
+      }
+      const playlists = Array.from(bulkSelectedPlaylists);
+      const students = Array.from(bulkSelectedStudents);
+      let successCount = 0, failCount = 0;
+      for (const playlistId of playlists) {
+        for (const studentId of students) {
+          try {
+            const res = await fetch(`${BASE_URL}/students/${studentId}/playlists/${playlistId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+            });
+            const result = await res.json();
+            if (res.ok && result.success) successCount++;
+            else failCount++;
+          } catch {
+            failCount++;
+          }
+        }
+      }
+      bootstrap.Modal.getInstance(document.getElementById('bulkAssignModal')).hide();
+      showToast(`Bulk assign complete: ${successCount} success, ${failCount} failed.`, failCount === 0 ? 'success' : 'warning');
+      loadPlaylists();
+    });
      const BASE_URL = 'https://api.hamdan.help/api';
   // const BASE_URL = 'http://localhost:3000/api';
     const token = localStorage.getItem('token');
@@ -579,7 +784,21 @@
 
           const courseList = document.getElementById(courseListId);
           if (playlist.courses?.length) {
-            playlist.courses.forEach((course, i) => {
+            // Filter for Bunny videos only
+            const bunnyCourses = playlist.courses.filter(course => 
+              course.video && (
+                course.video.includes('b-cdn.net') || 
+                course.video.includes('vz-') || 
+                course.bunnyVideoId
+              )
+            );
+            
+            if (bunnyCourses.length === 0) {
+              courseList.innerHTML = '<p class="text-white">No Bunny videos available in this playlist.</p>';
+              return;
+            }
+            
+            bunnyCourses.forEach((course, i) => {
               const videoId = `video-${playlist.id}-${i}`;
               const col = document.createElement('div');
               col.className = 'col-md-4 mb-3 sortable-item';
@@ -612,7 +831,7 @@
                         <button class="btn btn-sm btn-secondary d-none cancel-desc-btn" data-course-id="${course.id}"><i class="bi bi-x"></i> Cancel</button>
                       </div>
                     </div>
-                    <div id="mux-player-container-${playlist.id}-${i}"></div>
+                    <div id="bunny-player-container-${playlist.id}-${i}"></div>
                     <button class="btn btn-sm ${course.isLocked ? 'btn-success' : 'btn-outline-success'} mt-2 toggle-lock-btn" data-id="${course.id}">
                       ${course.isLocked ? 'Show' : 'Hide'} Video
                     </button>
@@ -625,7 +844,7 @@
               courseList.appendChild(col);
 
               // Store course ID for lazy loading
-              const container = document.getElementById(`mux-player-container-${playlist.id}-${i}`);
+              const container = document.getElementById(`bunny-player-container-${playlist.id}-${i}`);
               if (container) {
                 container.setAttribute('data-course-id', course.id);
                 container.setAttribute('data-loaded', 'false');
@@ -641,9 +860,9 @@
             const isHidden = courseList.classList.contains('d-none');
             document.getElementById(toggleBtnId).textContent = isHidden ? 'Show Videos' : 'Hide Videos';
             
-            // Lazy load MUX players when videos are shown
+            // Lazy load Bunny players when videos are shown
             if (!isHidden) {
-              loadMuxPlayersForPlaylist(playlist.id);
+              loadBunnyPlayersForPlaylist(playlist.id);
             }
           });
         });
@@ -793,9 +1012,9 @@
     }
 
 
-    // Lazy load MUX players for a specific playlist
-    async function loadMuxPlayersForPlaylist(playlistId) {
-      const containers = document.querySelectorAll(`[id^="mux-player-container-${playlistId}-"][data-loaded="false"]`);
+    // Lazy load Bunny players for a specific playlist
+    async function loadBunnyPlayersForPlaylist(playlistId) {
+      const containers = document.querySelectorAll(`[id^="bunny-player-container-${playlistId}-"][data-loaded="false"]`);
       
       for (const container of containers) {
         const courseId = container.getAttribute('data-course-id');
@@ -811,91 +1030,46 @@
           const data = await res.json();
           
           if (!data.success || !data.data) {
-            container.innerHTML = '<div class="text-danger text-center py-2">تعذر جلب بيانات الفيديو</div>';
+            container.innerHTML = '<div class="text-danger text-center py-2">Failed to load video data</div>';
             continue;
           }
           
           const courseData = data.data;
-          let playbackId = courseData.muxPlaybackId || (courseData.playback_ids && courseData.playback_ids[0]?.id) || courseData.playback_id;
-          let playbackPolicy = courseData.muxPlaybackPolicy || (courseData.playback_ids && courseData.playback_ids[0]?.policy) || courseData.playback_policy;
           
-          // Fallback: Try to extract playbackId from video URL if still missing
-          if (!playbackId && courseData.video && courseData.video.includes('stream.mux.com/')) {
-            const match = courseData.video.match(/stream\.mux\.com\/([a-zA-Z0-9]+)\.m3u8/);
-            if (match) playbackId = match[1];
+          // Extract video ID from bunnyVideoId or from HLS URL
+          let videoId = courseData.bunnyVideoId;
+          if (!videoId && courseData.video) {
+            // Extract video ID from URL like: https://vz-543301.b-cdn.net/{videoId}/playlist.m3u8
+            const match = courseData.video.match(/\/([a-f0-9-]+)\/playlist\.m3u8/);
+            if (match) {
+              videoId = match[1];
+            }
           }
           
-          if (!playbackId) {
-            container.innerHTML = '<div class="text-danger text-center py-2">رابط الفيديو غير متوفر</div>';
+          if (!videoId) {
+            container.innerHTML = '<div class="text-danger text-center py-2">Video URL not available</div>';
             continue;
           }
           
-          // Fetch MUX tokens
-          const tokenEndpoints = [
-            { attr: 'playback-token', url: `${BASE_URL}/mux/playback-token?playbackId=${playbackId}` },
-            { attr: 'drm-token', url: `${BASE_URL}/mux/drm-token?playbackId=${playbackId}` },
-            { attr: 'thumbnail-token', url: `${BASE_URL}/mux/thumbnail-token?playbackId=${playbackId}` },
-            { attr: 'storyboard-token', url: `${BASE_URL}/mux/storyboard-token?playbackId=${playbackId}` },
-          ];
-          const headers = { Authorization: `Bearer ${token}` };
-          const tokenFetches = tokenEndpoints.map(e => 
-            fetch(e.url, { headers })
-              .then(r => r.json())
-              .catch(() => ({ success: false, token: null }))
-          );
-          const tokens = await Promise.all(tokenFetches);
+          // Create Bunny iframe embed
+          const iframeHtml = `
+            <div style="position:relative;padding-top:56.25%;">
+              <iframe 
+                src="https://iframe.mediadelivery.net/embed/543301/${videoId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true" 
+                loading="lazy" 
+                style="border:0;position:absolute;top:0;height:100%;width:100%;border-radius:4px;" 
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" 
+                allowfullscreen="true"
+              ></iframe>
+            </div>
+          `;
           
-          // Create mux-player
-          const muxPlayer = document.createElement('mux-player');
-          muxPlayer.setAttribute('playback-id', playbackId);
-          muxPlayer.setAttribute('style', 'width: 100%; aspect-ratio: 16/9; background: #000;');
-          muxPlayer.setAttribute('disable-tracking', 'true');
-          muxPlayer.setAttribute('debug', 'false');
-          muxPlayer.setAttribute('disable-cookies', 'true');
-          
-          // Set tokens based on policy
-          if (playbackPolicy === 'drm') {
-            if (tokens[0].success && tokens[0].token) {
-              muxPlayer.setAttribute('playback-token', tokens[0].token);
-            }
-            if (tokens[1].success && tokens[1].token) {
-              muxPlayer.setAttribute('drm-token', tokens[1].token);
-            }
-          } else if (playbackPolicy === 'signed') {
-            if (tokens[0].success && tokens[0].token) {
-              muxPlayer.setAttribute('playback-token', tokens[0].token);
-            }
-          } else if (playbackPolicy === 'public') {
-            // No token needed
-          } else if (Array.isArray(courseData.playback_ids) && courseData.playback_ids[0]?.policy && courseData.playback_ids.length > 1) {
-            if (tokens[0].success && tokens[0].token) {
-              muxPlayer.setAttribute('playback-token', tokens[0].token);
-            }
-            if (tokens[1].success && tokens[1].token) {
-              muxPlayer.setAttribute('drm-token', tokens[1].token);
-            }
-          }
-          
-          // Set thumbnail and storyboard tokens if available
-          if (tokens[2] && tokens[2].success && tokens[2].token) {
-            muxPlayer.setAttribute('thumbnail-token', tokens[2].token);
-          } else {
-            muxPlayer.setAttribute('thumbnail-time', '-1');
-          }
-          if (tokens[3] && tokens[3].success && tokens[3].token) {
-            muxPlayer.setAttribute('storyboard-token', tokens[3].token);
-          }
-          
-          muxPlayer.setAttribute('metadata-title', courseData.title);
-          muxPlayer.setAttribute('metadata-description', courseData.description || '');
-          
-          // Replace container content with player
-          container.innerHTML = '';
-          container.appendChild(muxPlayer);
+          container.innerHTML = iframeHtml;
           container.setAttribute('data-loaded', 'true');
           
         } catch (error) {
-          container.innerHTML = '<div class="text-danger text-center py-2">حدث خطأ أثناء تحميل الفيديو</div>';
+          console.error('Bunny player load error:', error);
+          container.innerHTML = '<div class="text-danger text-center py-2">Error loading video</div>';
         }
       }
     }

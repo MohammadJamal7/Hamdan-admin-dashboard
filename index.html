@@ -8,6 +8,45 @@
   <link rel="shortcut icon" href="images/logo.png" type="image/png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
+        /* Loader overlay styles */
+        #loaderOverlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(135deg, #1f1c2c, #928dab);
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          transition: opacity 0.3s;
+          opacity: 1;
+        }
+        #loaderOverlay.hide {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.5s;
+        }
+        .loader-spinner {
+          border: 8px solid #f3f3f3;
+          border-top: 8px solid #ffc107;
+          border-radius: 50%;
+          width: 80px;
+          height: 80px;
+          animation: spin 1.2s linear infinite;
+          margin-bottom: 30px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .loader-text {
+          color: #fff;
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin-bottom: 10px;
+          letter-spacing: 1px;
+          text-shadow: 0 2px 8px #0008;
+        }
     body {
       background: linear-gradient(135deg, #1f1c2c, #928dab);
       min-height: 100vh;
@@ -151,6 +190,12 @@
 </head>
 <body>
 
+  <!-- Loader Overlay -->
+  <div id="loaderOverlay">
+    <div class="loader-spinner"></div>
+    <div class="loader-text">Loading Dashboard...</div>
+  </div>
+
  <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container-fluid">
@@ -176,6 +221,14 @@
   <div class="card-wrapper" id="dashboardCards"></div>
   <!-- JS -->
   <script>
+
+        // Loader helpers
+        function hideLoader() {
+          document.getElementById('loaderOverlay').classList.add('hide');
+          setTimeout(() => {
+            document.getElementById('loaderOverlay').style.display = 'none';
+          }, 600);
+        }
     const user = JSON.parse(localStorage.getItem('user'));
     const token = localStorage.getItem('token');
 
@@ -214,16 +267,17 @@
 
       // Dashboard cards config
       const cards = [
-        { 
-          perm: 'manage_courses', 
-          icon: '🎥', 
-          title: 'Manage Videos', 
-          type: 'dual-button',
-          buttons: [
-            { text: 'DRM Videos', link: 'videos.html', class: 'btn-warning' },
-            { text: 'Normal Videos', link: 'videos-normal.html', class: 'btn-info' }
-          ]
-        },
+        // { 
+        //   perm: 'manage_courses', 
+        //   icon: '🎥', 
+        //   title: 'Manage Videos', 
+        //   type: 'dual-button',
+        //   buttons: [
+        //     { text: 'DRM Videos', link: 'videos.html', class: 'btn-warning' },
+        //     { text: 'Normal Videos', link: 'videos-normal.html', class: 'btn-info' }
+        //   ]
+        // },
+        { perm: 'manage_courses', icon: '🎥', title: 'Bunny Videos', link: 'bunny-videos-management.html' },
         { perm: 'manage_playlists', icon: '📂', title: 'Playlists', link: 'playlists.html' },
         { perm: 'manage_students', icon: '👨‍🎓', title: 'Students', link: 'students.html' },
         { perm: 'send_notifications', icon: '🔔', title: 'Send Notifications', link: 'notifications.html' },
@@ -240,7 +294,7 @@
       const visibleCards = [];
       cards.forEach(card => {
         if (
-          card.perm === null ||
+          card.perm === null || 
           hasPermission(card.perm) ||
           (card.superAdmin && latestUser?.isSuperAdmin)
         ) {
@@ -271,6 +325,8 @@
         }
       });
       console.log('Cards visible to this user:', visibleCards);
+      // Hide loader after cards are rendered
+      hideLoader();
 
 
       // Navbar is kept simple with only Dashboard and Logout
