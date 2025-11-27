@@ -583,6 +583,7 @@
               let errorDetails = `Upload failed.\nStatus: ${uploadXhr.status}\nResponse: ${responseText}`;
               showToast(errorDetails, 'error', 8000);
               document.getElementById('progressText').textContent = errorDetails;
+              hideUploadOverlay();
               reject(new Error(errorDetails));
             }
           });
@@ -591,6 +592,7 @@
             let errorDetails = `XHR error during upload. Status: ${uploadXhr.status}\nResponse: ${uploadXhr.responseText}`;
             showToast(errorDetails, 'error', 8000);
             document.getElementById('progressText').textContent = errorDetails;
+            hideUploadOverlay();
             reject(new Error(errorDetails));
           });
           uploadXhr.upload.addEventListener('progress', (e) => {
@@ -600,6 +602,11 @@
             }
           });
           uploadXhr.open('POST', `${apiUrl}/bunny/upload`);
+          // Add Authorization header with JWT token if available
+          const token = localStorage.getItem('token') || '';
+          if (token) {
+            uploadXhr.setRequestHeader('Authorization', 'Bearer ' + token);
+          }
           uploadXhr.send(formData);
         });
 
@@ -653,6 +660,7 @@
         let errorMsg = error && error.message ? error.message : String(error);
         showToast('Upload error: ' + errorMsg, 'error', 8000);
         document.getElementById('progressText').textContent = 'Upload error: ' + errorMsg;
+        hideUploadOverlay();
         resetUploadArea();
       }
     });
