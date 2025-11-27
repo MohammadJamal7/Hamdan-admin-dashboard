@@ -631,7 +631,7 @@
       loadPlaylists();
     });
      const BASE_URL = 'https://api.hamdan.help/api';
-  // const BASE_URL = 'http://localhost:3000/api';
+   //const BASE_URL = 'http://localhost:3000/api';
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -1019,23 +1019,24 @@
       for (const container of containers) {
         const courseId = container.getAttribute('data-course-id');
         if (!courseId) continue;
-        
+
         container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"></div><br><small class="text-muted">Loading video...</small></div>';
-        
+
         try {
           // Fetch course details
           const res = await fetch(`${BASE_URL}/courses/${courseId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
-          
+
           if (!data.success || !data.data) {
             container.innerHTML = '<div class="text-danger text-center py-2">Failed to load video data</div>';
+            console.error('Failed to load video data for courseId:', courseId, data);
             continue;
           }
-          
+
           const courseData = data.data;
-          
+
           // Extract video ID from bunnyVideoId or from HLS URL
           let videoId = courseData.bunnyVideoId;
           if (!videoId && courseData.video) {
@@ -1045,30 +1046,49 @@
               videoId = match[1];
             }
           }
-          
+
           if (!videoId) {
             container.innerHTML = '<div class="text-danger text-center py-2">Video URL not available</div>';
+            console.error('No Bunny videoId found for courseId:', courseId, courseData);
             continue;
           }
-          
-          // Create Bunny iframe embed
-          const iframeHtml = `
-            <div style="position:relative;padding-top:56.25%;">
-              <iframe 
-                src="https://iframe.mediadelivery.net/embed/543301/${videoId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true" 
-                loading="lazy" 
-                style="border:0;position:absolute;top:0;height:100%;width:100%;border-radius:4px;" 
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" 
-                allowfullscreen="true"
-              ></iframe>
-            </div>
-          `;
-          
-          container.innerHTML = iframeHtml;
+
+          // Log the videoId and the full embed URL
+          const embedUrl = `https://iframe.mediadelivery.net/embed/548882/${videoId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`;
+          console.log('Embedding Bunny video:', { courseId, videoId, embedUrl, courseData });
+
+          // Create Bunny iframe embed and attach error logging
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'relative';
+          wrapper.style.paddingTop = '56.25%';
+          const iframe = document.createElement('iframe');
+          iframe.src = embedUrl;
+          iframe.loading = 'lazy';
+          iframe.style.border = '0';
+          iframe.style.position = 'absolute';
+          iframe.style.top = '0';
+          iframe.style.height = '100%';
+          iframe.style.width = '100%';
+          iframe.style.borderRadius = '4px';
+          iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture;';
+          iframe.allowFullscreen = true;
+
+          // Log iframe load and error events
+          iframe.addEventListener('error', (e) => {
+            console.error('Bunny iframe error:', { courseId, videoId, embedUrl, event: e });
+          });
+          iframe.addEventListener('load', () => {
+            // If the iframe loads but the content is 404, we can't detect it directly, but log anyway
+            console.log('Bunny iframe loaded:', { courseId, videoId, embedUrl });
+          });
+
+          wrapper.appendChild(iframe);
+          container.innerHTML = '';
+          container.appendChild(wrapper);
           container.setAttribute('data-loaded', 'true');
-          
+
         } catch (error) {
-          console.error('Bunny player load error:', error);
+          console.error('Bunny player load error:', error, 'for courseId:', courseId);
           container.innerHTML = '<div class="text-danger text-center py-2">Error loading video</div>';
         }
       }
