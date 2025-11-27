@@ -387,8 +387,8 @@
     let currentVideoId = null;
     let currentVideoDuration = 0;
     let currentHlsUrl = null;
-    //const apiUrl = 'http://localhost:3000/api';
-    const apiUrl = 'https://api.hamdan.help/api';
+    const apiUrl = 'http://localhost:3000/api';
+    //const apiUrl = 'https://api.hamdan.help/api';
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
@@ -543,6 +543,7 @@
       document.getElementById('uploadArea').style.display = 'none';
       document.querySelector('.progress-container').style.display = 'block';
 
+
       try {
         // Step 1: Upload the video
         const formData = new FormData();
@@ -559,29 +560,39 @@
           }
         });
 
-
         // Show animated overlay
         showUploadOverlay();
 
         await new Promise((resolve, reject) => {
           uploadXhr.addEventListener('load', () => {
-            if (uploadXhr.status === 200) {
-              const response = JSON.parse(uploadXhr.responseText);
-              if (response.success) {
-                currentVideoId = response.data.videoId;
-                currentVideoDuration = response.data.length || 0;
-                currentHlsUrl = response.data.hlsUrl;
-                setUploadProgress(100);
-                setTimeout(resolve, 400); // let user see 100% for a moment
-              } else {
-                reject(new Error('Upload failed'));
-              }
+            let responseText = uploadXhr.responseText;
+            let responseJson = null;
+            try {
+              responseJson = JSON.parse(responseText);
+            } catch (err) {
+              responseJson = null;
+            }
+            if (uploadXhr.status === 200 && responseJson && responseJson.success) {
+              currentVideoId = responseJson.data.videoId;
+              currentVideoDuration = responseJson.data.length || 0;
+              currentHlsUrl = responseJson.data.hlsUrl;
+              setUploadProgress(100);
+              setTimeout(resolve, 400); // let user see 100% for a moment
             } else {
-              reject(new Error('Upload failed'));
+              // Log detailed error info to the page
+              let errorDetails = `Upload failed.\nStatus: ${uploadXhr.status}\nResponse: ${responseText}`;
+              showToast(errorDetails, 'error', 8000);
+              document.getElementById('progressText').textContent = errorDetails;
+              reject(new Error(errorDetails));
             }
           });
 
-          uploadXhr.addEventListener('error', () => reject(new Error('Upload failed')));
+          uploadXhr.addEventListener('error', () => {
+            let errorDetails = `XHR error during upload. Status: ${uploadXhr.status}\nResponse: ${uploadXhr.responseText}`;
+            showToast(errorDetails, 'error', 8000);
+            document.getElementById('progressText').textContent = errorDetails;
+            reject(new Error(errorDetails));
+          });
           uploadXhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
               const percent = Math.round((e.loaded / e.total) * 100);
@@ -637,8 +648,11 @@
         currentHlsUrl = null;
 
       } catch (error) {
+        // Log error to the page and console
         console.error('Error:', error);
-        Swal.fire('Error', error.message, 'error');
+        let errorMsg = error && error.message ? error.message : String(error);
+        showToast('Upload error: ' + errorMsg, 'error', 8000);
+        document.getElementById('progressText').textContent = 'Upload error: ' + errorMsg;
         resetUploadArea();
       }
     });
