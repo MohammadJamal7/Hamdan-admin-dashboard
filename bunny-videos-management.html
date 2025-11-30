@@ -296,7 +296,7 @@
       <div class="upload-area" id="uploadArea">
         <i class="bi bi-file-earmark-video" style="font-size: 2rem; color: #ffc107;"></i>
         <p class="mt-3 mb-2">Drag and drop your video here or click to select</p>
-        <p style="font-size: 0.9rem; color: #999;">MP4, WebM, or other video formats (max 500MB)<br>Video will be uploaded when you create the course</p>
+        <p style="font-size: 0.9rem; color: #999;">MP4, WebM, or other video formats (max 1.2GB)<br>Video will be uploaded when you create the course</p>
         <input type="file" id="videoFile" accept="video/*" style="display: none;" />
       </div>
 
@@ -443,8 +443,8 @@
         return;
       }
 
-      if (file.size > 500 * 1024 * 1024) {
-        Swal.fire('Error', 'Video size exceeds 500MB limit', 'error');
+      if (file.size > 1200 * 1024 * 1024) {
+        Swal.fire('Error', 'Video size exceeds 1.2GB limit', 'error');
         return;
       }
 
