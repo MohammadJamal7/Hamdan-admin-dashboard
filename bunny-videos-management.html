@@ -83,6 +83,21 @@
               letter-spacing: 1px;
               text-shadow: 0 2px 8px #0008;
             }
+            .upload-cancel-btn {
+              background: rgba(220, 53, 69, 0.8);
+              border: 2px solid #dc3545;
+              color: #fff;
+              padding: 8px 16px;
+              border-radius: 20px;
+              cursor: pointer;
+              font-size: 0.9rem;
+              margin-top: 15px;
+              transition: all 0.3s ease;
+            }
+            .upload-cancel-btn:hover {
+              background: rgba(220, 53, 69, 1);
+              transform: scale(1.05);
+            }
             .upload-progress-bar {
               width: 320px;
               height: 18px;
@@ -270,20 +285,8 @@
       <div class="upload-text">Uploading Video...</div>
       <div class="upload-progress-bar">
         <div class="upload-progress" id="uploadProgressBar"></div>
-
-        <!-- Back Button -->
-        <div class="container mt-3">
-          <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
-            ← Back to Dashboard
-          </a>
-        </div>
-            <a class="nav-link active" href="#"><i class="bi bi-film"></i> Bunny Videos</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="bunny-playlists.html"><i class="bi bi-collection-play"></i> Bunny Playlists</a>
-          </li>
-        </ul>
       </div>
+      <button class="upload-cancel-btn" id="cancelUploadBtn" onclick="cancelUpload()">Cancel Upload</button>
     </div>
   </nav>
 
@@ -382,6 +385,11 @@
         }
         function setUploadProgress(percent) {
           document.getElementById('uploadProgressBar').style.width = percent + '%';
+        }
+        function cancelUpload() {
+          if (window.currentUploadXhr) {
+            window.currentUploadXhr.abort();
+          }
         }
     let selectedFile = null;
     let currentVideoId = null;
@@ -551,6 +559,7 @@
         formData.append('title', document.getElementById('videoTitle').value);
 
         const uploadXhr = new XMLHttpRequest();
+        window.currentUploadXhr = uploadXhr; // Store globally for cancellation
 
         uploadXhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
@@ -564,7 +573,15 @@
         showUploadOverlay();
 
         await new Promise((resolve, reject) => {
+          // Set timeout for large file uploads (30 minutes)
+          const timeoutId = setTimeout(() => {
+            uploadXhr.abort();
+            reject(new Error('Upload timeout - file too large or slow connection'));
+          }, 30 * 60 * 1000); // 30 minutes
+
           uploadXhr.addEventListener('load', () => {
+            clearTimeout(timeoutId);
+            window.currentUploadXhr = null; // Clear global reference
             let responseText = uploadXhr.responseText;
             let responseJson = null;
             try {
@@ -589,18 +606,35 @@
           });
 
           uploadXhr.addEventListener('error', () => {
-            let errorDetails = `XHR error during upload. Status: ${uploadXhr.status}\nResponse: ${uploadXhr.responseText}`;
+            clearTimeout(timeoutId);
+            window.currentUploadXhr = null; // Clear global reference
+            let errorDetails = `Network error during upload. Status: ${uploadXhr.status}\nResponse: ${uploadXhr.responseText}`;
+            if (uploadXhr.status === 0) {
+              errorDetails = 'Upload failed - network error or timeout. Please check your connection and try again.';
+            }
             showToast(errorDetails, 'error', 8000);
             document.getElementById('progressText').textContent = errorDetails;
             hideUploadOverlay();
             reject(new Error(errorDetails));
           });
+
+          uploadXhr.addEventListener('abort', () => {
+            clearTimeout(timeoutId);
+            window.currentUploadXhr = null; // Clear global reference
+            const errorDetails = 'Upload was cancelled or timed out.';
+            showToast(errorDetails, 'error', 5000);
+            document.getElementById('progressText').textContent = errorDetails;
+            hideUploadOverlay();
+            reject(new Error(errorDetails));
+          });
+
           uploadXhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
               const percent = Math.round((e.loaded / e.total) * 100);
               setUploadProgress(percent);
             }
           });
+
           uploadXhr.open('POST', `${apiUrl}/bunny/upload`);
           // Add Authorization header with JWT token if available
           const token = localStorage.getItem('token') || '';
