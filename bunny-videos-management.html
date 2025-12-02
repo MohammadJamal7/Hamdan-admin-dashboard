@@ -395,8 +395,8 @@
     let currentVideoId = null;
     let currentVideoDuration = 0;
     let currentHlsUrl = null;
-   // const apiUrl = 'http://localhost:3000/api';
-    const apiUrl = 'https://api.hamdan.help/api';
+    const apiUrl = 'http://localhost:3000/api';
+    //const apiUrl = 'https://api.hamdan.help/api';
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
@@ -446,12 +446,15 @@
 
     // Handle file selection
     function handleFileSelect(file) {
+      console.log('[Upload Debug] File selected:', file);
       if (!file.type.startsWith('video/')) {
+        console.error('[Upload Debug] Invalid file type:', file.type);
         Swal.fire('Error', 'Please select a valid video file', 'error');
         return;
       }
 
       if (file.size > 1200 * 1024 * 1024) {
+        console.error('[Upload Debug] File size exceeds limit:', file.size);
         Swal.fire('Error', 'Video size exceeds 1.2GB limit', 'error');
         return;
       }
@@ -459,7 +462,6 @@
       selectedFile = file;
       showSelectedFile(file);
       document.getElementById('courseCreationCard').style.display = 'block';
-      
       // Pre-fill title with filename
       document.getElementById('videoTitle').value = file.name.replace(/\.[^/.]+$/, '');
     }
@@ -532,17 +534,18 @@
       e.preventDefault();
 
       if (!selectedFile) {
+        console.error('[Upload Debug] No file selected for upload.');
         Swal.fire('Error', 'Please select a video file first', 'error');
         return;
       }
 
       const playlistId = document.getElementById('playlistSelect').value;
-      console.log('Selected playlistId:', playlistId, typeof playlistId);
-      console.log('Select options:', Array.from(document.getElementById('playlistSelect').options).map(opt => ({value: opt.value, text: opt.text})));
-      
+      console.log('[Upload Debug] Selected playlistId:', playlistId, typeof playlistId);
+      console.log('[Upload Debug] Select options:', Array.from(document.getElementById('playlistSelect').options).map(opt => ({value: opt.value, text: opt.text})));
+
       // Additional check for "undefined" string
       if (playlistId === "undefined" || playlistId === undefined || playlistId === null || playlistId === "" || !/^[0-9a-fA-F]{24}$/.test(playlistId)) {
-        console.error('Invalid playlistId detected:', playlistId);
+        console.error('[Upload Debug] Invalid playlistId detected:', playlistId);
         Swal.fire('Error', 'Please select a valid playlist from the dropdown', 'error');
         return;
       }
@@ -551,12 +554,12 @@
       document.getElementById('uploadArea').style.display = 'none';
       document.querySelector('.progress-container').style.display = 'block';
 
-
       try {
         // Step 1: Upload the video
         const formData = new FormData();
         formData.append('video', selectedFile);
         formData.append('title', document.getElementById('videoTitle').value);
+        console.log('[Upload Debug] FormData prepared:', formData);
 
         const uploadXhr = new XMLHttpRequest();
         window.currentUploadXhr = uploadXhr; // Store globally for cancellation
@@ -566,6 +569,7 @@
             const percentComplete = (e.loaded / e.total) * 100;
             document.getElementById('uploadProgress').style.width = percentComplete + '%';
             document.getElementById('progressText').textContent = `Uploading: ${Math.round(percentComplete)}%`;
+            console.log(`[Upload Debug] Progress: ${e.loaded}/${e.total} (${percentComplete.toFixed(2)}%)`);
           }
         });
 
@@ -575,10 +579,17 @@
         await new Promise((resolve, reject) => {
           // Set timeout for large file uploads (30 minutes)
           const timeoutId = setTimeout(() => {
+            console.error('[Upload Debug] Upload timeout reached. Aborting.');
             uploadXhr.abort();
             reject(new Error('Upload timeout - file too large or slow connection'));
           }, 30 * 60 * 1000); // 30 minutes
 
+          uploadXhr.addEventListener('loadstart', () => {
+            console.log('[Upload Debug] XHR loadstart event fired.');
+          });
+          uploadXhr.addEventListener('readystatechange', () => {
+            console.log('[Upload Debug] XHR readyState:', uploadXhr.readyState);
+          });
           uploadXhr.addEventListener('load', () => {
             clearTimeout(timeoutId);
             window.currentUploadXhr = null; // Clear global reference
@@ -588,8 +599,11 @@
               responseJson = JSON.parse(responseText);
             } catch (err) {
               responseJson = null;
+              console.error('[Upload Debug] Failed to parse response JSON:', responseText);
             }
+            console.log('[Upload Debug] XHR load event. Status:', uploadXhr.status, 'Response:', responseText);
             if (uploadXhr.status === 200 && responseJson && responseJson.success) {
+              console.log('[Upload Debug] Upload success. Response JSON:', responseJson);
               currentVideoId = responseJson.data.videoId;
               currentVideoDuration = responseJson.data.length || 0;
               currentHlsUrl = responseJson.data.hlsUrl;
@@ -598,6 +612,7 @@
             } else {
               // Log detailed error info to the page
               let errorDetails = `Upload failed.\nStatus: ${uploadXhr.status}\nResponse: ${responseText}`;
+              console.error('[Upload Debug] Upload failed:', errorDetails);
               showToast(errorDetails, 'error', 8000);
               document.getElementById('progressText').textContent = errorDetails;
               hideUploadOverlay();
@@ -612,6 +627,7 @@
             if (uploadXhr.status === 0) {
               errorDetails = 'Upload failed - network error or timeout. Please check your connection and try again.';
             }
+            console.error('[Upload Debug] XHR error event:', errorDetails);
             showToast(errorDetails, 'error', 8000);
             document.getElementById('progressText').textContent = errorDetails;
             hideUploadOverlay();
@@ -622,6 +638,7 @@
             clearTimeout(timeoutId);
             window.currentUploadXhr = null; // Clear global reference
             const errorDetails = 'Upload was cancelled or timed out.';
+            console.warn('[Upload Debug] XHR abort event:', errorDetails);
             showToast(errorDetails, 'error', 5000);
             document.getElementById('progressText').textContent = errorDetails;
             hideUploadOverlay();
@@ -632,6 +649,7 @@
             if (e.lengthComputable) {
               const percent = Math.round((e.loaded / e.total) * 100);
               setUploadProgress(percent);
+              console.log(`[Upload Debug] XHR upload progress: ${percent}% (${e.loaded}/${e.total})`);
             }
           });
 
@@ -640,7 +658,9 @@
           const token = localStorage.getItem('token') || '';
           if (token) {
             uploadXhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            console.log('[Upload Debug] Authorization header set.');
           }
+          console.log('[Upload Debug] Sending XHR request to:', `${apiUrl}/bunny/upload`);
           uploadXhr.send(formData);
         });
 
@@ -660,6 +680,7 @@
           socialMedia: "[]",
           isLocked: false
         };
+        console.log('[Upload Debug] Course data to send:', courseData);
 
         const courseResponse = await fetch(`${apiUrl}/courses`, {
           method: 'POST',
@@ -672,11 +693,13 @@
 
         if (!courseResponse.ok) {
           const errorData = await courseResponse.json();
+          console.error('[Upload Debug] Course creation failed:', errorData);
           showToast(errorData.message || 'Failed to create course', 'error');
           throw new Error(errorData.message || 'Failed to create course');
         }
 
         const courseResult = await courseResponse.json();
+        console.log('[Upload Debug] Course created successfully:', courseResult);
 
         showToast('Video uploaded and course created successfully!', 'success');
         document.getElementById('courseForm').reset();
@@ -690,7 +713,7 @@
 
       } catch (error) {
         // Log error to the page and console
-        console.error('Error:', error);
+        console.error('[Upload Debug] Error in upload process:', error);
         let errorMsg = error && error.message ? error.message : String(error);
         showToast('Upload error: ' + errorMsg, 'error', 8000);
         document.getElementById('progressText').textContent = 'Upload error: ' + errorMsg;
