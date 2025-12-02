@@ -653,14 +653,26 @@
             }
           });
 
-          uploadXhr.open('POST', `${apiUrl}/bunny/upload`);
+          uploadXhr.open('POST', `${apiUrl}/bunny/upload`, true);
+          
+          // Set request headers for robust upload
+          uploadXhr.setRequestHeader('Accept', 'application/json');
+          uploadXhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+          
           // Add Authorization header with JWT token if available
           const token = localStorage.getItem('token') || '';
           if (token) {
             uploadXhr.setRequestHeader('Authorization', 'Bearer ' + token);
             console.log('[Upload Debug] Authorization header set.');
           }
+          
+          console.log('[Upload Debug] XHR Request Headers:');
+          console.log('[Upload Debug]   - Accept: application/json');
+          console.log('[Upload Debug]   - X-Requested-With: XMLHttpRequest');
+          console.log('[Upload Debug]   - Authorization: Bearer [token]');
           console.log('[Upload Debug] Sending XHR request to:', `${apiUrl}/bunny/upload`);
+          console.log('[Upload Debug] FormData size:', selectedFile.size);
+          
           uploadXhr.send(formData);
         });
 
