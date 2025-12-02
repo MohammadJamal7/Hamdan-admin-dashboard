@@ -577,12 +577,12 @@
         showUploadOverlay();
 
         await new Promise((resolve, reject) => {
-          // Set timeout for large file uploads (30 minutes)
+          // Set timeout for large file uploads (120 minutes = 2 hours)
           const timeoutId = setTimeout(() => {
             console.error('[Upload Debug] Upload timeout reached. Aborting.');
             uploadXhr.abort();
             reject(new Error('Upload timeout - file too large or slow connection'));
-          }, 30 * 60 * 1000); // 30 minutes
+          }, 120 * 60 * 1000); // 120 minutes
 
           uploadXhr.addEventListener('loadstart', () => {
             console.log('[Upload Debug] XHR loadstart event fired.');
