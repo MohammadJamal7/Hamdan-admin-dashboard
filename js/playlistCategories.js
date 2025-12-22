@@ -37,6 +37,21 @@ async function createCategory(playlistId, title, description = '') {
       body: JSON.stringify({ title, description })
     });
     
+    // Check if response is ok
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('API Error:', {
+        status: res.status,
+        statusText: res.statusText,
+        body: errorText
+      });
+      return { 
+        success: false, 
+        error: `API Error ${res.status}: ${res.statusText}`,
+        details: errorText
+      };
+    }
+    
     const data = await res.json();
     return data;
   } catch (error) {
@@ -313,7 +328,9 @@ function showAddCategoryModal(playlistId) {
       showToast('Category created successfully!', 'success');
       loadPlaylists();
     } else {
-      showToast('Error creating category: ' + result.message, 'danger');
+      const errorMsg = result.details || result.error || 'Unknown error';
+      console.error('Full error:', errorMsg);
+      showToast('Error creating category: ' + result.error, 'danger');
     }
   });
 }
