@@ -471,8 +471,30 @@
     </div>
   </div>
 
+  <!-- Manage Categories Modal -->
+  <div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-folder me-2"></i>Manage Categories for <span id="categoryPlaylistTitle"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="categoryPlaylistId" />
+          <div id="categoryManagementContainer"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/playlistCategories.js"></script>
 
   <script>
     // --- Import Students from Playlist Logic ---
@@ -630,8 +652,8 @@
       showToast(`Bulk assign complete: ${successCount} success, ${failCount} failed.`, failCount === 0 ? 'success' : 'warning');
       loadPlaylists();
     });
-     const BASE_URL = 'https://api.hamdan.help/api';
-   //const BASE_URL = 'http://localhost:3000/api';
+     //const BASE_URL = 'https://api.hamdan.help/api';
+   const BASE_URL = 'http://localhost:3000/api';
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -700,6 +722,11 @@
       const result = await res.json();
       console.log('📥 loadPlaylists() - received data from server:', result);
       
+      // Store current playlists for category management
+      if (result.success) {
+        window.currentPlaylists = result.data;
+      }
+      
       const container = document.getElementById('playlistsContainer');
       container.innerHTML = '';
 
@@ -757,6 +784,11 @@
                   <div class="col-6 mb-2">
                     <button class="btn btn-sm btn-info w-100 manage-students-btn" data-id="${playlist.id}" data-title="${playlist.title}">
                       <i class="bi bi-people me-1"></i>Manage Students
+                    </button>
+                  </div>
+                  <div class="col-6 mb-2">
+                    <button class="btn btn-sm btn-primary w-100 manage-categories-btn" data-id="${playlist.id}" data-title="${playlist.title}">
+                      <i class="bi bi-folder me-1"></i>Manage Categories
                     </button>
                   </div>
                   <div class="col-6 mb-2">
@@ -1029,33 +1061,47 @@
           });
           const data = await res.json();
 
+          // LOG: API response for this course
+          console.log('[PLAYLISTS] API response for courseId', courseId, ':', data);
+
           if (!data.success || !data.data) {
             container.innerHTML = '<div class="text-danger text-center py-2">Failed to load video data</div>';
-            console.error('Failed to load video data for courseId:', courseId, data);
+            console.error('[PLAYLISTS] Failed to load video data for courseId:', courseId, data);
             continue;
           }
 
           const courseData = data.data;
+          // LOG: courseData object
+          console.log('[PLAYLISTS] courseData:', courseData);
 
           // Extract video ID from bunnyVideoId or from HLS URL
           let videoId = courseData.bunnyVideoId;
+          // LOG: initial bunnyVideoId
+          console.log('[PLAYLISTS] initial bunnyVideoId:', videoId);
           if (!videoId && courseData.video) {
             // Extract video ID from URL like: https://vz-543301.b-cdn.net/{videoId}/playlist.m3u8
             const match = courseData.video.match(/\/([a-f0-9-]+)\/playlist\.m3u8/);
             if (match) {
               videoId = match[1];
+              // LOG: extracted videoId from video URL
+              console.log('[PLAYLISTS] extracted videoId from video URL:', videoId);
+            } else {
+              // LOG: no match in video URL
+              console.log('[PLAYLISTS] no match in video URL:', courseData.video);
             }
           }
+          // LOG: final videoId to use
+          console.log('[PLAYLISTS] final videoId:', videoId);
 
           if (!videoId) {
             container.innerHTML = '<div class="text-danger text-center py-2">Video URL not available</div>';
-            console.error('No Bunny videoId found for courseId:', courseId, courseData);
+            console.error('[PLAYLISTS] No Bunny videoId found for courseId:', courseId, courseData);
             continue;
           }
 
           // Log the videoId and the full embed URL
           const embedUrl = `https://iframe.mediadelivery.net/embed/548882/${videoId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`;
-          console.log('Embedding Bunny video:', { courseId, videoId, embedUrl, courseData });
+          console.log('[PLAYLISTS] Embedding Bunny video:', { courseId, videoId, embedUrl, courseData });
 
           // Create Bunny iframe embed and attach error logging
           const wrapper = document.createElement('div');
@@ -1075,11 +1121,11 @@
 
           // Log iframe load and error events
           iframe.addEventListener('error', (e) => {
-            console.error('Bunny iframe error:', { courseId, videoId, embedUrl, event: e });
+            console.error('[PLAYLISTS] Bunny iframe error:', { courseId, videoId, embedUrl, event: e });
           });
           iframe.addEventListener('load', () => {
             // If the iframe loads but the content is 404, we can't detect it directly, but log anyway
-            console.log('Bunny iframe loaded:', { courseId, videoId, embedUrl });
+            console.log('[PLAYLISTS] Bunny iframe loaded:', { courseId, videoId, embedUrl });
           });
 
           wrapper.appendChild(iframe);
@@ -1088,7 +1134,7 @@
           container.setAttribute('data-loaded', 'true');
 
         } catch (error) {
-          console.error('Bunny player load error:', error, 'for courseId:', courseId);
+          console.error('[PLAYLISTS] Bunny player load error:', error, 'for courseId:', courseId);
           container.innerHTML = '<div class="text-danger text-center py-2">Error loading video</div>';
         }
       }
@@ -1456,6 +1502,41 @@
         new bootstrap.Modal(document.getElementById('manageStudentsModal')).show();
       }
     });
+
+    // Event listener for the Manage Categories button
+    document.addEventListener('click', event => {
+      if (event.target.closest('.manage-categories-btn')) {
+        const button = event.target.closest('.manage-categories-btn');
+        let playlistId = button.getAttribute('data-id');
+        const playlistTitle = button.getAttribute('data-title');
+
+        // Defensive: trim and check playlistId
+        playlistId = playlistId ? playlistId.trim() : '';
+        if (!playlistId) {
+          showToast('Invalid playlist ID', 'danger');
+          return;
+        }
+
+        // Set the playlist ID and title in the modal
+        document.getElementById('categoryPlaylistId').value = playlistId;
+        document.getElementById('categoryPlaylistTitle').textContent = playlistTitle;
+
+        // Clear previous content
+        document.getElementById('categoryManagementContainer').innerHTML = '';
+
+        // Load and render categories for this playlist
+        const playlist = (window.currentPlaylists || []).find(p => p.id === playlistId);
+        if (playlist) {
+          renderCategoryManagement(playlistId, playlistTitle, playlist);
+        }
+
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('manageCategoriesModal')).show();
+      }
+    });
+
+    // Store current playlists for category management
+    window.currentPlaylists = [];
 
     // Event listener for the search button
     document.getElementById('searchStudentsBtn').addEventListener('click', () => {
