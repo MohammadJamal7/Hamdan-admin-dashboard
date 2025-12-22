@@ -28,19 +28,34 @@ async function loadPlaylistCategories(playlistId) {
 
 async function createCategory(playlistId, title, description = '') {
   try {
-    const res = await fetch(`${BASE_URL}/playlists/${playlistId}/categories`, {
+    const url = `${BASE_URL}/playlists/${playlistId}/categories`;
+    console.log('[CREATE CATEGORY] Starting...');
+    console.log('[CREATE CATEGORY] URL:', url);
+    console.log('[CREATE CATEGORY] BASE_URL:', BASE_URL);
+    console.log('[CREATE CATEGORY] playlistId:', playlistId);
+    console.log('[CREATE CATEGORY] title:', title);
+    console.log('[CREATE CATEGORY] description:', description);
+    console.log('[CREATE CATEGORY] token exists:', !!token);
+    
+    const payload = { title, description };
+    console.log('[CREATE CATEGORY] Payload:', payload);
+    
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ title, description })
+      body: JSON.stringify(payload)
     });
+    
+    console.log('[CREATE CATEGORY] Response Status:', res.status);
+    console.log('[CREATE CATEGORY] Response OK:', res.ok);
     
     // Check if response is ok
     if (!res.ok) {
       const errorText = await res.text();
-      console.error('API Error:', {
+      console.error('[CREATE CATEGORY] API Error Response:', {
         status: res.status,
         statusText: res.statusText,
         body: errorText
@@ -53,9 +68,10 @@ async function createCategory(playlistId, title, description = '') {
     }
     
     const data = await res.json();
+    console.log('[CREATE CATEGORY] Success Response:', data);
     return data;
   } catch (error) {
-    console.error('Error creating category:', error);
+    console.error('[CREATE CATEGORY] Fetch Error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -318,18 +334,26 @@ async function moveCourseToCategory(courseId, categoryId, playlistId) {
 }
 
 function showAddCategoryModal(playlistId) {
+  console.log('[SHOW ADD CATEGORY] Called with playlistId:', playlistId);
   const title = prompt('Enter category name:');
-  if (!title) return;
+  if (!title) {
+    console.log('[SHOW ADD CATEGORY] Title prompt cancelled');
+    return;
+  }
   
+  console.log('[SHOW ADD CATEGORY] Title entered:', title);
   const description = prompt('Enter category description (optional):');
   
+  console.log('[SHOW ADD CATEGORY] Creating category...');
   createCategory(playlistId, title, description || '').then(result => {
+    console.log('[SHOW ADD CATEGORY] Result:', result);
     if (result.success) {
+      console.log('[SHOW ADD CATEGORY] Success!');
       showToast('Category created successfully!', 'success');
       loadPlaylists();
     } else {
       const errorMsg = result.details || result.error || 'Unknown error';
-      console.error('Full error:', errorMsg);
+      console.error('[SHOW ADD CATEGORY] Full error:', errorMsg);
       showToast('Error creating category: ' + result.error, 'danger');
     }
   });
