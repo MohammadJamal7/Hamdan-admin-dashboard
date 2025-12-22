@@ -815,9 +815,20 @@
           container.appendChild(card);
 
           const courseList = document.getElementById(courseListId);
-          if (playlist.courses?.length) {
+          
+          // Extract all courses from categories (flatten the structure)
+          let allCourses = [];
+          if (playlist.categories?.length) {
+            playlist.categories.forEach(category => {
+              if (category.courses?.length) {
+                allCourses = allCourses.concat(category.courses);
+              }
+            });
+          }
+          
+          if (allCourses?.length) {
             // Filter for Bunny videos only
-            const bunnyCourses = playlist.courses.filter(course => 
+            const bunnyCourses = allCourses.filter(course => 
               course.video && (
                 course.video.includes('b-cdn.net') || 
                 course.video.includes('vz-') || 
