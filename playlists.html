@@ -826,6 +826,13 @@
             });
           }
           
+          // Sort courses by order field
+          allCourses.sort((a, b) => {
+            const orderA = a.order || 999999;
+            const orderB = b.order || 999999;
+            return orderA - orderB;
+          });
+          
           if (allCourses?.length) {
             // Filter for Bunny videos only
             const bunnyCourses = allCourses.filter(course => 
@@ -837,7 +844,7 @@
             );
             
             if (bunnyCourses.length === 0) {
-              courseList.innerHTML = '<p class="text-white">No Bunny videos available in this playlist.</p>';
+              courseList.innerHTML = '<p class="text-white">No videos available in this playlist.</p>';
               return;
             }
             
@@ -846,10 +853,10 @@
               const col = document.createElement('div');
               col.className = 'col-md-4 mb-3 sortable-item';
               col.setAttribute('data-course-id', course.id);
-              col.setAttribute('data-order', course.order || '');
+              col.setAttribute('data-order', course.order || (i + 1));
               col.innerHTML = `
                 <div class="card h-100">
-                  <div class="order-badge">${i + 1}</div>
+                  <div class="order-badge">${course.order || (i + 1)}</div>
                   <div class="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                       <i class="bi bi-grip-vertical me-2 drag-handle" title="Drag to reorder"></i>
