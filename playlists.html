@@ -816,15 +816,8 @@
 
           const courseList = document.getElementById(courseListId);
           
-          // Extract all courses from categories (flatten the structure)
-          let allCourses = [];
-          if (playlist.categories?.length) {
-            playlist.categories.forEach(category => {
-              if (category.courses?.length) {
-                allCourses = allCourses.concat(category.courses);
-              }
-            });
-          }
+          // Get courses directly from playlist (no category filtering)
+          let allCourses = playlist.courses || [];
           
           // Sort courses by order field
           allCourses.sort((a, b) => {
