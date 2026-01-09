@@ -252,7 +252,7 @@ async function renderCategoryManagement(playlistId, playlistTitle, playlist) {
           const result = await deleteCategory(playlistId, categoryId);
           if (result.success) {
             showToast('Category deleted successfully!', 'success');
-            loadPlaylists(); // Reload playlists
+            refreshCategoryModal(playlistId);
           } else {
             showToast('Error deleting category: ' + result.message, 'danger');
           }
@@ -288,6 +288,23 @@ async function renderCategoryManagement(playlistId, playlistTitle, playlist) {
   }
 }
 
+function formatDuration(seconds) {
+  if (!seconds || seconds === 0) return 'N/A';
+  
+  const totalSeconds = Math.round(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+}
+
 function renderCoursesInCategory(category, playlistId, playlist) {
   const coursesList = document.getElementById(`courses-${category.id}`);
   const courses = category.courses || [];
@@ -305,10 +322,10 @@ function renderCoursesInCategory(category, playlistId, playlist) {
           <div>
             <h6 class="mb-1">${index + 1}. ${course.title}</h6>
             <small class="text-muted">${course.description || 'No description'}</small>
-            ${course.duration ? `<br/><small class="text-info">Duration: ${course.duration}s</small>` : ''}
+            ${course.duration ? `<br/><small class="text-info">Duration: ${formatDuration(course.duration)}</small>` : ''}
           </div>
           <div>
-            <select class="form-select form-select-sm" style="width: 200px;" onchange="moveCourseToCategory('${course.id}', this.value, '${playlistId}')">
+            <select class="form-select form-select-sm category-select" style="width: 200px; background-color: #495057; color: #fff; border-color: #666;" data-course-id="${course.id}" data-current-category="${category.id}" onchange="moveCourseToCategory('${course.id}', this.value, '${playlistId}', '${category.id}')">
               <option value="">Move to Category...</option>
               ${(playlist.categories || []).map(cat => `
                 <option value="${cat.id}" ${cat.id === category.id ? 'selected' : ''}>${cat.title}</option>
@@ -319,17 +336,90 @@ function renderCoursesInCategory(category, playlistId, playlist) {
       `).join('')}
     </div>
   `;
+  
+  // Add CSS for better styling of dropdown options
+  const style = document.createElement('style');
+  style.textContent = `
+    .category-select {
+      background-color: #495057 !important;
+      color: #fff !important;
+      border-color: #666 !important;
+    }
+    .category-select option {
+      background-color: #2b2e4a;
+      color: #fff;
+    }
+    .category-select:focus {
+      background-color: #495057 !important;
+      color: #fff !important;
+      border-color: #80bdff !important;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    }
+  `;
+  if (!document.getElementById('category-select-styles')) {
+    style.id = 'category-select-styles';
+    document.head.appendChild(style);
+  }
 }
 
-async function moveCourseToCategory(courseId, categoryId, playlistId) {
+async function moveCourseToCategory(courseId, categoryId, playlistId, oldCategoryId) {
   if (!categoryId) return;
+  
+  // Find the course element and add loading state
+  const courseElement = document.querySelector(`[data-course-id="${courseId}"]`);
+  const selectElement = courseElement?.querySelector('select');
+  if (selectElement) {
+    selectElement.disabled = true;
+  }
   
   const result = await assignCourseToCategory(courseId, categoryId);
   if (result.success) {
     showToast('Video moved to category!', 'success');
-    loadPlaylists(); // Reload to show updated structure
+    
+    // Reload the categories data from the API to get the updated structure
+    const playlistRes = await fetch(`${BASE_URL}/playlists/${playlistId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (playlistRes.ok) {
+      const playlistData = await playlistRes.json();
+      if (playlistData.success) {
+        // Re-render all categories in the modal with the updated data
+        const container = document.getElementById('categoryManagementContainer');
+        if (container) {
+          // Refresh the category management UI
+          await renderCategoryManagement(playlistId, '', playlistData.data);
+        }
+      }
+    }
   } else {
     showToast('Error moving video: ' + result.message, 'danger');
+    // Re-enable the select and reset it
+    if (selectElement) {
+      selectElement.disabled = false;
+      selectElement.value = oldCategoryId;
+    }
+  }
+}
+
+// Helper function to refresh the category management modal
+async function refreshCategoryModal(playlistId) {
+  try {
+    const playlistRes = await fetch(`${BASE_URL}/playlists/${playlistId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (playlistRes.ok) {
+      const playlistData = await playlistRes.json();
+      if (playlistData.success) {
+        const container = document.getElementById('categoryManagementContainer');
+        if (container) {
+          await renderCategoryManagement(playlistId, '', playlistData.data);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error refreshing category modal:', error);
   }
 }
 
@@ -342,15 +432,13 @@ function showAddCategoryModal(playlistId) {
   }
   
   console.log('[SHOW ADD CATEGORY] Title entered:', title);
-  const description = prompt('Enter category description (optional):');
-  
   console.log('[SHOW ADD CATEGORY] Creating category...');
-  createCategory(playlistId, title, description || '').then(result => {
+  createCategory(playlistId, title, '').then(result => {
     console.log('[SHOW ADD CATEGORY] Result:', result);
     if (result.success) {
       console.log('[SHOW ADD CATEGORY] Success!');
       showToast('Category created successfully!', 'success');
-      loadPlaylists();
+      refreshCategoryModal(playlistId);
     } else {
       const errorMsg = result.details || result.error || 'Unknown error';
       console.error('[SHOW ADD CATEGORY] Full error:', errorMsg);
@@ -363,12 +451,10 @@ function showEditCategoryModal(category, playlistId) {
   const title = prompt('Edit category name:', category.title);
   if (!title) return;
   
-  const description = prompt('Edit category description:', category.description || '');
-  
-  updateCategory(playlistId, category.id, title, description || '').then(result => {
+  updateCategory(playlistId, category.id, title, '').then(result => {
     if (result.success) {
       showToast('Category updated successfully!', 'success');
-      loadPlaylists();
+      refreshCategoryModal(playlistId);
     } else {
       showToast('Error updating category: ' + result.message, 'danger');
     }
