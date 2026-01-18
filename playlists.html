@@ -2062,14 +2062,9 @@
             const reader = new FileReader();
             reader.onload = function(event) {
               const previewImage = document.getElementById('previewImage');
-              const currentThumbnail = document.getElementById('currentThumbnail');
               if (previewImage) {
                 previewImage.src = event.target.result;
                 previewImage.style.display = 'block';
-              }
-              // Hide current thumbnail when showing new preview
-              if (currentThumbnail) {
-                currentThumbnail.style.display = 'none';
               }
             };
             reader.readAsDataURL(file);
