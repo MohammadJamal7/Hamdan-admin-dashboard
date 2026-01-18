@@ -969,30 +969,46 @@
             const currentThumbnail = btn.getAttribute('data-current-thumbnail');
             
             // Store the current course ID for saving later
-            document.getElementById('thumbnailModal').setAttribute('data-course-id', courseId);
+            const modal = document.getElementById('thumbnailModal');
+            if (!modal) {
+              console.error('[THUMBNAIL] Modal element not found');
+              return;
+            }
+            modal.setAttribute('data-course-id', courseId);
             
             // Update modal title
-            document.querySelector('#thumbnailModal .modal-title').textContent = `Edit Thumbnail: ${courseTitle}`;
+            const modalTitle = document.querySelector('#thumbnailModal .modal-title');
+            if (modalTitle) {
+              modalTitle.textContent = `Edit Thumbnail: ${courseTitle}`;
+            }
             
             // Clear file input
-            document.getElementById('thumbnailInput').value = '';
-            document.getElementById('previewImage').style.display = 'none';
+            const fileInput = document.getElementById('thumbnailInput');
+            if (fileInput) {
+              fileInput.value = '';
+            }
+            const previewImage = document.getElementById('previewImage');
+            if (previewImage) {
+              previewImage.style.display = 'none';
+            }
             
             // Show or hide current thumbnail
             const currentThumbnailImg = document.getElementById('currentThumbnailImage');
             const noThumbnailText = document.getElementById('noThumbnailText');
             
-            if (currentThumbnail) {
-              currentThumbnailImg.src = currentThumbnail;
-              currentThumbnailImg.style.display = 'block';
-              noThumbnailText.style.display = 'none';
-            } else {
-              currentThumbnailImg.style.display = 'none';
-              noThumbnailText.style.display = 'block';
+            if (currentThumbnailImg && noThumbnailText) {
+              if (currentThumbnail) {
+                currentThumbnailImg.src = currentThumbnail;
+                currentThumbnailImg.style.display = 'block';
+                noThumbnailText.style.display = 'none';
+              } else {
+                currentThumbnailImg.style.display = 'none';
+                noThumbnailText.style.display = 'block';
+              }
             }
             
             // Show modal
-            const thumbnailModal = new bootstrap.Modal(document.getElementById('thumbnailModal'));
+            const thumbnailModal = new bootstrap.Modal(modal);
             thumbnailModal.show();
           });
         });
