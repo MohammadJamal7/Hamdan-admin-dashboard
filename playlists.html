@@ -788,6 +788,11 @@
                     </button>
                   </div>
                   <div class="col-6 mb-2">
+                    <button class="btn btn-sm btn-danger w-100 delete-all-students-btn" data-id="${playlist.id}" data-title="${playlist.title}" title="Delete all students from this playlist">
+                      <i class="bi bi-trash-fill me-1"></i>Delete All Students
+                    </button>
+                  </div>
+                  <div class="col-6 mb-2">
                     <button class="btn btn-sm btn-primary w-100 manage-categories-btn" data-id="${playlist.id}" data-title="${playlist.title}">
                       <i class="bi bi-folder me-1"></i>Manage Categories
                     </button>
@@ -1565,6 +1570,60 @@
 
         // Show the modal
         new bootstrap.Modal(document.getElementById('manageStudentsModal')).show();
+      }
+    });
+
+    // Delete all students from playlist
+    document.addEventListener('click', event => {
+      if (event.target.closest('.delete-all-students-btn')) {
+        const button = event.target.closest('.delete-all-students-btn');
+        const playlistId = button.getAttribute('data-id');
+        const playlistTitle = button.getAttribute('data-title');
+
+        Swal.fire({
+          title: 'Delete All Students?',
+          html: `<p>Are you sure you want to remove all students from <strong>"${playlistTitle}"</strong>?</p><p class="text-danger"><small>This action cannot be undone!</small></p>`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete all students!',
+          confirmButtonColor: '#dc3545',
+          cancelButtonText: 'Cancel'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            try {
+              console.log('[DELETE ALL STUDENTS] Starting delete for playlist:', playlistId);
+              
+              const res = await fetch(`${BASE_URL}/playlists/${playlistId}/students/delete-all`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': 'Bearer ' + token,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              const data = await res.json();
+              console.log('[DELETE ALL STUDENTS] Response:', data);
+
+              if (data.success) {
+                showToast(`${data.deletedCount || 0} students removed successfully!`, 'success');
+                
+                // Update student count display
+                const studentCountDisplay = document.querySelector(`[data-playlist-id="${playlistId}"]`);
+                if (studentCountDisplay) {
+                  studentCountDisplay.textContent = '0';
+                }
+                
+                // Reload playlists to refresh the display
+                await loadPlaylists();
+              } else {
+                showToast(data.message || 'Error deleting students', 'danger');
+              }
+            } catch (error) {
+              console.error('[DELETE ALL STUDENTS] Error:', error);
+              showToast('Error: ' + error.message, 'danger');
+            }
+          }
+        });
       }
     });
 
