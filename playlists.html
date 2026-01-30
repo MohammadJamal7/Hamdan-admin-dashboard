@@ -927,6 +927,8 @@
               document.getElementById('editPlaylistId').value = playlist.id;
               document.getElementById('editTitle').value = playlist.title;
               document.getElementById('editDescription').value = playlist.description;
+              // Clear file input
+              document.querySelector('#editPlaylistForm input[name="image"]').value = '';
               new bootstrap.Modal(document.getElementById('editPlaylistModal')).show();
             }
           });
@@ -1241,8 +1243,10 @@
       const result = await res.json();
       if (result.success) {
         bootstrap.Modal.getInstance(document.getElementById('editPlaylistModal')).hide();
+        e.target.reset();
         showToast('Playlist updated successfully!');
-        loadPlaylists();
+        // Wait a moment then reload to ensure server has processed the image
+        setTimeout(() => loadPlaylists(), 500);
       } else {
         showToast(result.message || 'Error updating playlist', 'danger');
       }
