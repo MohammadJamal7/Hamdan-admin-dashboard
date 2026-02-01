@@ -767,6 +767,9 @@
     let selectedPlaylists = [];
     let selectedUniversityId = null;
     let selectedCollegeId = null;
+    let currentRequestsPage = 1;
+    let totalRequestsPages = 1;
+    let allRequestsData = null;
 
     // Check authentication
     if (!token) {
@@ -1542,9 +1545,9 @@
     }
 
     // Load playlist requests
-    async function loadPlaylistRequests() {
+    async function loadPlaylistRequests(page = 1) {
       try {
-        const response = await fetch(`${API_BASE}/playlist-requests/admin`, {
+        const response = await fetch(`${API_BASE}/playlist-requests/admin?page=${page}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -1555,6 +1558,11 @@
         console.log('Playlist requests API response:', data);
         
         if (data.success && data.data && data.data.requests) {
+          // Store pagination info
+          allRequestsData = data.data;
+          currentRequestsPage = data.data.pagination?.currentPage || page;
+          totalRequestsPages = data.data.pagination?.totalPages || 1;
+          
           // Filter out any malformed requests but show ALL statuses (pending, approved, rejected)
           const validRequests = data.data.requests.filter(request => {
             if (!request || !request.id) {
@@ -1584,7 +1592,7 @@
               </div>
             ` : '';
             
-            dialogBody.innerHTML = deleteAllButton + validRequests.map(request => `
+            const requestsHTML = validRequests.map(request => `
               <div class="request-item" data-request-id="${request.id}">
                 <div class="request-header">
                   <div class="request-student">${request.student?.name || 'Unknown Student'}</div>
@@ -1625,11 +1633,28 @@
                 `}
               </div>
             `).join('');
+            
+            // Add pagination controls
+            const paginationHTML = totalRequestsPages > 1 ? `
+              <div style="border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 15px; margin-top: 15px; text-align: center;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-sm btn-outline-light" onclick="previousRequestsPage()" ${currentRequestsPage === 1 ? 'disabled' : ''}>
+                    <i class="bi bi-chevron-left"></i> Previous
+                  </button>
+                  <span class="text-muted">Page ${currentRequestsPage} of ${totalRequestsPages} (${data.data.pagination?.totalRequests || 0} total)</span>
+                  <button class="btn btn-sm btn-outline-light" onclick="nextRequestsPage()" ${currentRequestsPage === totalRequestsPages ? 'disabled' : ''}>
+                    Next <i class="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            ` : '';
+            
+            dialogBody.innerHTML = deleteAllButton + requestsHTML + paginationHTML;
           }
           
-          // Update badge count with pending requests only
-          const pendingRequests = validRequests.filter(request => request.status === 'pending');
-          updateRequestsBadge(pendingRequests.length);
+          // Update badge count with pending requests only from all pages (use total from pagination)
+          const totalPending = data.data.pagination?.totalPending || validRequests.filter(request => request.status === 'pending').length;
+          updateRequestsBadge(totalPending);
         } else {
           dialogBody.innerHTML = `
             <div class="empty-requests">
@@ -1648,6 +1673,19 @@
             <p>Could not load playlist requests</p>
           </div>
         `;
+      }
+    }
+
+    // Pagination functions for requests
+    function nextRequestsPage() {
+      if (currentRequestsPage < totalRequestsPages) {
+        loadPlaylistRequests(currentRequestsPage + 1);
+      }
+    }
+
+    function previousRequestsPage() {
+      if (currentRequestsPage > 1) {
+        loadPlaylistRequests(currentRequestsPage - 1);
       }
     }
 
