@@ -63,6 +63,7 @@
         <label><input type="checkbox" class="form-check-input" name="permissions" value="manage_questions"> Interactive Questions Expert</label>
         <label><input type="checkbox" class="form-check-input" name="permissions" value="send_messages"> Send Messages</label>
         <label><input type="checkbox" class="form-check-input" name="permissions" value="manage_universities"> Manage Universities</label>
+        <label><input type="checkbox" class="form-check-input" name="permissions" value="manage_sessions"> Manage Sessions</label>
       </div>
       <div class="form-check mt-2">
         <input class="form-check-input" type="checkbox" id="isSuperAdmin" value="true">
@@ -110,7 +111,7 @@
     const createAdminMsg = document.getElementById('createAdminMsg');
     // Permissions list
     const ALL_PERMISSIONS = [
-      'manage_admins', 'manage_students', 'manage_courses', 'manage_playlists', 'send_notifications', 'manage_settings', 'manage_notifications', 'manage_support_links', 'manage_privacy_policy', 'manage_questions', 'send_messages', 'manage_universities'
+      'manage_admins', 'manage_students', 'manage_courses', 'manage_playlists', 'send_notifications', 'manage_settings', 'manage_notifications', 'manage_support_links', 'manage_privacy_policy', 'manage_questions', 'send_messages', 'manage_universities', 'manage_sessions'
     ];
     let allAdmins = [];
     // Load all admins and render them

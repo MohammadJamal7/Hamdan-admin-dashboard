@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Management - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            min-height: 100vh;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 80px;
+            padding-bottom: 40px;
+        }
+
+        .navbar {
+            background: rgba(0, 0, 0, 0.7) !important;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            margin-bottom: 30px;
+        }
+
+        .card-header {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .btn {
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            border: none;
+            color: #000;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ff9800, #ffc107);
+            transform: translateY(-2px);
+            color: #000;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .table {
+            color: #fff;
+        }
+
+        .table thead {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.3s;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-check-input {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .badge-status {
+            background: rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .action-buttons .btn {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .selection-info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .selection-info.show {
+            display: block;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #fff;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            min-width: 300px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast.success {
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .toast.error {
+            border-color: rgba(245, 87, 108, 0.5);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .modal-content {
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-body {
+            color: #fff;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        .spinner-border {
+            color: #667eea;
+        }
+    </style>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">Admin Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Back to Dashboard</a></li>
+                    <li class="nav-item mt-2 mt-lg-0 ms-lg-3">
+                        <button class="btn btn-outline-light w-100" onclick="logout()">Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <a href="index.html" class="btn btn-outline-light mb-3" style="border-radius: 30px; font-weight: 600;">
+            ← Back to Dashboard
+        </a>
+
+        <h2 class="mb-4" style="font-weight: 700; letter-spacing: 1px;">
+            <i class="fas fa-sign-out-alt"></i> Session Management
+        </h2>
+
+        <!-- Stats -->
+        <div class="stats" id="statsContainer">
+            <div class="stat-card" id="statsContent">
+                <div class="stat-number" id="totalStudents">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <!-- Selected Students card hidden -->
+            <div class="stat-card text-center" id="loadingCard" style="display: none; grid-column: 1 / -1;">
+                <div class="spinner-border text-primary mb-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mb-0">Loading student data...</p>
+            </div>
+        </div>
+
+        <!-- Selection Info -->
+        <div class="selection-info" id="selectionInfo">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><strong id="selectedCountText">0</strong> student(s) selected</span>
+                <button class="btn btn-sm btn-secondary" onclick="clearSelection()">Clear Selection</button>
+            </div>
+        </div>
+
+        <!-- Controls Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cog"></i> Force Logout Options</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="search-box w-100" id="searchInput" placeholder="Search by name, email, or username...">
+                    </div>
+                    <div class="col-md-6 d-flex gap-2">
+                        <button class="btn btn-primary flex-grow-1" onclick="selectAll()">
+                            <i class="fas fa-check-double"></i> Select All
+                        </button>
+                        <button class="btn btn-secondary flex-grow-1" onclick="clearSelection()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-3 mt-3">
+                    <div class="col-md-4">
+                        <button class="btn btn-danger w-100" onclick="forceLogoutSelected()" id="logoutSelectedBtn" disabled>
+                            <i class="fas fa-sign-out-alt"></i> Logout Selected
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-warning w-100" onclick="forceLogoutAll()">
+                            <i class="fas fa-power-off"></i> Logout All Users
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-info w-100" onclick="loadStudents()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Table Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users"></i> Students List</h5>
+            </div>
+            <div class="card-body">
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border spinner-border-lg" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading students...</p>
+                </div>
+
+                <div class="table-responsive" id="tableContainer" style="display: none;">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">
+                                    <div class="checkbox-wrapper">
+                                        <input type="checkbox" class="form-check-input" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                                    </div>
+                                </th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Username</th>
+                                <th>Joined</th>
+                                <th style="width: 120px;">Status</th>
+                                <th style="width: 100px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsList">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="paginationContainer" class="d-flex justify-content-center mt-4">
+                    <!-- Pagination buttons will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Force Logout</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmMessage"></p>
+                    <p class="text-warning"><i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> These users will be immediately logged out and will need to log in again to access the system.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmBtn" onclick="executeLogout()">Confirm Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'https://api.hamdan.help/api';
+        //const API_URL = 'http://localhost:3000/api';
+        console.log('📍 Sessions Management Page Loaded');
+        console.log('API_URL:', API_URL);
+        
+        let token = localStorage.getItem('token');
+        console.log('Token from localStorage:', token ? '✓ Found' : '✗ NOT FOUND');
+        
+        let allStudents = [];
+        let selectedStudents = new Set();
+        let currentPage = 1;
+        let lastAction = null;
+        let totalStudentsInDb = 0;
+
+        // Check authentication
+        if (!token) {
+            console.log('❌ No token found - Redirecting to login');
+            window.location.href = 'login.html';
+        }
+        
+        console.log('✓ Token exists, initializing page...');
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide unnecessary elements
+            document.getElementById('selectionInfo').style.display = 'none';
+            
+            // Hide selected students stat card
+            const statCards = document.querySelectorAll('.stat-card');
+            if (statCards.length >= 2) {
+                statCards[1].style.display = 'none'; // Hide "Selected Students" card
+            }
+            
+            // Hide students table card (last card)
+            const cards = document.querySelectorAll('.card');
+            if (cards.length > 0) {
+                cards[cards.length - 1].style.display = 'none';
+            }
+            
+            // Hide search row and first/last button columns
+            const rows = document.querySelectorAll('.card .row.g-3');
+            if (rows.length > 0) {
+                rows[0].style.display = 'none'; // Hide search row
+            }
+            if (rows.length > 1) {
+                const buttonCols = rows[1].querySelectorAll('.col-md-4');
+                if (buttonCols.length >= 3) {
+                    buttonCols[0].style.display = 'none'; // Hide Logout Selected
+                    buttonCols[2].style.display = 'none'; // Hide Refresh
+                }
+            }
+            
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', debounce(function() {
+                    currentPage = 1;
+                    loadStudents();
+                }, 300));
+            }
+            
+            loadStudents();
+        });
+
+        function debounce(fn, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        async function loadStudents() {
+            try {
+                showLoader(true);
+                const search = document.getElementById('searchInput').value;
+                const url = new URL(`${API_URL}/sessions/students`);
+                url.searchParams.append('page', currentPage);
+                url.searchParams.append('limit', 20);
+                if (search) url.searchParams.append('search', search);
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.status === 401) {
+                    console.log('Got 401 - Token invalid or expired');
+                    localStorage.clear();
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.message || 'Failed to load students';
+                    console.error(`API Error ${response.status}:`, errorMsg);
+                    throw new Error(`API Error ${response.status}: ${errorMsg}`);
+                }
+
+                const data = await response.json();
+                allStudents = data.data.students;
+                totalStudentsInDb = data.data.pagination.total;
+                renderStudents();
+                renderPagination(data.data.pagination);
+                updateStats();
+                showLoader(false);
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showToast(error.message || 'Error loading students', 'error');
+                showLoader(false);
+            }
+        }
+
+        function renderStudents() {
+            const tbody = document.getElementById('studentsList');
+            tbody.innerHTML = '';
+
+            allStudents.forEach(student => {
+                const isSelected = selectedStudents.has(student.id);
+                const joinDate = new Date(student.createdAt).toLocaleDateString();
+
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" class="form-check-input student-checkbox" 
+                                       value="${student.id}" 
+                                       ${isSelected ? 'checked' : ''}
+                                       onchange="toggleStudent(this)">
+                            </div>
+                        </td>
+                        <td>
+                            <strong>${student.name}</strong>
+                        </td>
+                        <td>${student.email}</td>
+                        <td>${student.username}</td>
+                        <td>${joinDate}</td>
+                        <td>
+                            <span class="badge badge-status">
+                                <i class="fas fa-circle-notch"></i> Active
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="forceLogoutSingle('${student.id}', '${student.name}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById('tableContainer').style.display = 'block';
+        }
+
+        function toggleStudent(checkbox) {
+            const studentId = checkbox.value;
+            if (checkbox.checked) {
+                selectedStudents.add(studentId);
+            } else {
+                selectedStudents.delete(studentId);
+                document.getElementById('selectAllCheckbox').checked = false;
+            }
+            updateSelectionUI();
+        }
+
+        function toggleSelectAll(checkbox) {
+            if (checkbox.checked) {
+                allStudents.forEach(student => selectedStudents.add(student._id));
+            } else {
+                selectedStudents.clear();
+            }
+            renderStudents();
+            updateSelectionUI();
+        }
+
+        function selectAll() {
+            allStudents.forEach(student => selectedStudents.add(student._id));
+            renderStudents();
+            updateSelectionUI();
+        }
+
+        function clearSelection() {
+            selectedStudents.clear();
+            renderStudents();
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const count = selectedStudents.size;
+            const selectedCount = document.getElementById('selectedCount');
+            const selectedCountText = document.getElementById('selectedCountText');
+            if (selectedCount) selectedCount.textContent = count;
+            if (selectedCountText) selectedCountText.textContent = count;
+
+            if (count > 0) {
+                document.getElementById('selectionInfo').classList.add('show');
+                document.getElementById('logoutSelectedBtn').disabled = false;
+            } else {
+                document.getElementById('selectionInfo').classList.remove('show');
+                document.getElementById('logoutSelectedBtn').disabled = true;
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalStudents').textContent = totalStudentsInDb;
+            const selectedCount = document.getElementById('selectedCount');
+            if (selectedCount) selectedCount.textContent = selectedStudents.size;
+        }
+
+        function showLoader(show) {
+            const loadingCard = document.getElementById('loadingCard');
+            const totalStudents = document.getElementById('totalStudents');
+            // selectedCount card may not exist if hidden
+            const selectedCount = document.getElementById('selectedCount');
+            if (show) {
+                if (totalStudents && totalStudents.parentElement) totalStudents.parentElement.style.display = 'none';
+                if (selectedCount && selectedCount.parentElement) selectedCount.parentElement.style.display = 'none';
+                loadingCard.style.display = 'block';
+            } else {
+                if (totalStudents && totalStudents.parentElement) totalStudents.parentElement.style.display = 'block';
+                if (selectedCount && selectedCount.parentElement) selectedCount.parentElement.style.display = 'block';
+                loadingCard.style.display = 'none';
+            }
+        }
+
+        function renderPagination(pagination) {
+            const container = document.getElementById('paginationContainer');
+            container.innerHTML = '';
+
+            if (pagination.pages <= 1) return;
+
+            for (let i = 1; i <= pagination.pages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `btn btn-sm ${i === pagination.page ? 'btn-primary' : 'btn-outline-light'}`;
+                btn.textContent = i;
+                btn.style.margin = '0 5px';
+                btn.onclick = () => {
+                    currentPage = i;
+                    loadStudents();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                container.appendChild(btn);
+            }
+        }
+
+        function forceLogoutSingle(userId, userName) {
+            lastAction = { type: 'single', userIds: [userId] };
+            document.getElementById('confirmMessage').textContent = `Are you sure you want to logout ${userName}?`;
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+        function forceLogoutSelected() {
+            if (selectedStudents.size === 0) {
+                showToast('No students selected', 'error');
+                return;
+            }
+            lastAction = { type: 'multiple', userIds: Array.from(selectedStudents) };
+            document.getElementById('confirmMessage').textContent = `Are you sure you want to logout ${selectedStudents.size} student(s)?`;
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+        function forceLogoutAll() {
+            lastAction = { type: 'all' };
+            document.getElementById('confirmMessage').textContent = 'Are you sure you want to logout ALL students? This action will affect all active users.';
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+        async function executeLogout() {
+            if (!lastAction) return;
+
+            try {
+                let url, method, body;
+
+                if (lastAction.type === 'single' || lastAction.type === 'multiple') {
+                    if (lastAction.userIds.length === 1) {
+                        url = `${API_URL}/sessions/logout-user`;
+                        body = { userId: lastAction.userIds[0] };
+                    } else {
+                        url = `${API_URL}/sessions/logout-users`;
+                        body = { userIds: lastAction.userIds };
+                    }
+                } else if (lastAction.type === 'all') {
+                    url = `${API_URL}/sessions/logout-all`;
+                    body = {};
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to logout users');
+                }
+
+                showToast(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+                clearSelection();
+                loadStudents();
+            } catch (error) {
+                console.error('Error executing logout:', error);
+                showToast(error.message, 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                </div>
+            `;
+            document.getElementById('toastContainer').appendChild(toast);
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
