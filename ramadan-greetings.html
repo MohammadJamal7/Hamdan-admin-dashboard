@@ -13,53 +13,128 @@
         }
 
         body {
-            background: #f5f7fa;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
         }
 
         .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #006b7f 100%);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background-color: rgba(0, 0, 0, 0.85);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .navbar-brand {
+            color: #fff !important;
+            font-weight: bold;
+        }
+
+        .navbar-brand i {
+            margin-left: 10px;
+        }
+
+        .navbar-nav .nav-link {
+            color: #fff !important;
+        }
+
+        .btn-outline-light {
+            color: #fff !important;
+            border-color: #fff !important;
+        }
+
+        .btn-outline-light:hover {
+            background-color: #ffc107;
+            border-color: #ffc107 !important;
+            color: #000 !important;
         }
 
         .container-fluid {
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         .card {
             border: none;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
             margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
         }
 
         .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #006b7f 100%);
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
             color: white;
             border: none;
             border-radius: 15px 15px 0 0;
             padding: 20px;
             font-weight: 700;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-body {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+        }
+
+        .nav-tabs {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px 15px 0 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px;
+            border-bottom: none;
+        }
+
+        .nav-tabs .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: none;
+        }
+
+        .tab-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 0 0 15px 15px;
+            padding: 20px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #006b7f 100%);
+            background: #ffc107;
             border: none;
+            color: #000;
+            font-weight: 600;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #003040 0%, #005060 100%);
+            background: #ffca2c;
+            color: #000;
         }
 
-        .btn-secondary {
-            background: var(--secondary-color);
-            border: none;
-            color: white;
+        .btn-light {
+            background: #ffc107 !important;
+            color: #000 !important;
+            font-weight: 600;
+            border: none !important;
         }
 
-        .btn-secondary:hover {
-            background: #653a18;
-            color: white;
+        .btn-light:hover {
+            background: #ffca2c !important;
         }
 
         .btn-sm {
@@ -99,16 +174,20 @@
         .modal-content {
             border-radius: 15px;
             border: none;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
         }
 
         .modal-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #006b7f 100%);
+            background: rgba(0, 0, 0, 0.85);
             color: white;
             border: none;
             border-radius: 15px 15px 0 0;
         }
 
-        .greeting-item {
+        .modal-header .btn-close {
+            filter: brightness(2);
+        }        .greeting-item {
             background: white;
             padding: 15px;
             border-radius: 10px;
@@ -206,6 +285,15 @@
             border: 2px dashed var(--primary-color);
             padding: 10px;
         }
+
+        h1 {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            color: #fff;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -230,6 +318,9 @@
 
     <!-- Main Content -->
     <div class="container-fluid">
+        <!-- Page Title -->
+        <h1><i class="fas fa-moon"></i> إدارة تهنئات رمضان</h1>
+
         <!-- Success Message -->
         <div class="success-message" id="successMessage">
             <i class="fas fa-check-circle"></i> <span id="successText"></span>

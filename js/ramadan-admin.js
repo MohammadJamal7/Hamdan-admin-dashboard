@@ -148,11 +148,7 @@ class RamadanAdmin {
                             : ''}
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        ${!this.settings.activeTemplateId || this.settings.activeTemplateId.toString() !== template._id.toString() 
-                            ? `<button class="btn btn-sm btn-success" onclick="admin.activateTemplate('${template._id}')">
-                                <i class="fas fa-star"></i> تفعيل
-                              </button>` 
-                            : ''}
+                        <!-- Activate button hidden as requested -->
                         <button class="btn btn-sm btn-danger" onclick="admin.deleteTemplate('${template._id}')">
                             <i class="fas fa-trash"></i> حذف
                         </button>
