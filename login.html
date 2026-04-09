@@ -100,6 +100,10 @@
   </div>
 
   <script>
+    const API_BASE = window.location.hostname === 'admin.hamdan.help'
+      ? 'https://api.hamdan.help/api'
+      : 'http://localhost:3000/api';
+
     const loginForm = document.getElementById('loginForm');
     const errorMsg = document.getElementById('errorMsg');
 
@@ -111,7 +115,7 @@
 
       try { 
         localStorage.clear(); // Always clear before setting new user/token
-        const res = await fetch('https://api.hamdan.help/api/admin/login', { 
+        const res = await fetch(`${API_BASE}/admin/login`, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ 
@@ -121,7 +125,14 @@
           }) 
       }); 
 
-      const data = await res.json();
+        const rawText = await res.text();
+        let data = {};
+
+        try {
+        data = rawText ? JSON.parse(rawText) : {};
+        } catch (_) {
+        data = { message: rawText || 'Unexpected server response' };
+        }
 
       if (res.ok && data.success) { 
           // Store the full admin user object (with permissions and isSuperAdmin)
@@ -129,7 +140,7 @@
           localStorage.setItem('user', JSON.stringify(data.data.admin || data.data.student || {}));
           window.location.href = 'index.html'; 
       } else { 
-          throw new Error(data.message || 'Login failed'); 
+          throw new Error(data.message || `Login failed (${res.status})`); 
       } 
   } catch (err) { 
       errorMsg.textContent = err.message; 
